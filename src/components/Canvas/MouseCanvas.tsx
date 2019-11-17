@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
-import { CanvasBase, DownloadFileNameType, Position, Size } from './CanvasBase';
+import { CanvasBase, DownloadFileNameType } from './CanvasBase';
+import { Position, Size } from './Model';
 
-type MouseCanvasProps = { onAnimationFrame: (imageData: ImageData, pos1?: Position, pos2?: Position) => ImageData | null } & Size & DownloadFileNameType
+type MouseCanvasProps = { draw: (imageData: ImageData, pos1: Position, pos2: Position) => void } & Size & DownloadFileNameType
 
 const MouseCanvas: React.FC<MouseCanvasProps> = (props) => {
-    const [isDraging, setIsDraging] = useState(false);
     const [startPosition, setStartPosition] = useState<Position | undefined>(undefined);
     const [endPosition, setEndPosition] = useState<Position | undefined>(undefined);
-
-    let vaildImageData: ImageData | undefined = undefined;
-
 
     return (
         <CanvasBase
@@ -17,37 +14,29 @@ const MouseCanvas: React.FC<MouseCanvasProps> = (props) => {
             width={props.width}
             downloadFileName={props.downloadFileName}
             canvasRenderContext={(ctx) => {
-                if (vaildImageData === undefined) {
-                    vaildImageData = ctx.getImageData(0, 0, props.width, props.height);
-                }
-                if (vaildImageData !== undefined) {
-                    // 不能把有效的图像数据丢到动画帧里，这样会破坏现场
-                    const copyVaildImageData = new ImageData(vaildImageData.data.slice(0), vaildImageData.width, vaildImageData.height);
-                    const newFrame = props.onAnimationFrame(copyVaildImageData, startPosition, endPosition);
-
-                    if (newFrame !== null) {
-                        ctx.putImageData(newFrame, 0, 0);
-                        if (!isDraging) {
-                            vaildImageData = newFrame;
-                            console.log("替换新的有效帧");
-                        }
-                    }
+                const currentImageData = ctx.getImageData(0, 0, props.width, props.height);
+                if (endPosition !== undefined && startPosition !== undefined) {
+                    console.log(`起始点：${startPosition}`);
+                    console.log(`终止点：${endPosition}`);
+                    props.draw(currentImageData, startPosition, endPosition);
+                    ctx.putImageData(currentImageData, 0, 0);
+                    console.log("绘制完成！");
+                    setStartPosition(undefined);
+                    setEndPosition(undefined);
                 }
             }}
             onMouseDown={(e) => {
-                setIsDraging(true);
-                setStartPosition({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
-            }}
-            onMouseMove={(e) => {
-                if (isDraging) {
-                    setEndPosition({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+                // 右键是不被支持的
+                if (e.button === 2) {
+                    return;
                 }
-            }}
-            onMouseUp={(e) => {
-                setIsDraging(false);
-            }}
-            onMouseLeave={(e) => {
-                setIsDraging(false);
+                if (startPosition === undefined) {
+                    setStartPosition({ X: e.nativeEvent.offsetX, Y: e.nativeEvent.offsetY });
+                    return;
+                }
+                if (endPosition === undefined) {
+                    setEndPosition({ X: e.nativeEvent.offsetX, Y: e.nativeEvent.offsetY });
+                }
             }}
         />
     );

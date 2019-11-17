@@ -3,9 +3,8 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import clsx from 'clsx';
 import React from 'react';
+import { Position, Size } from './Model';
 
-export type Size = { width: number, height: number };
-export type Position = { x: number, y: number };
 export type CanvasBaseState = { contextMenuMousePosition?: Position };
 export type CustomDragEventHandlers = {
     onMouseEnter?: React.MouseEventHandler,
@@ -113,8 +112,8 @@ export class CanvasBase<P = {}, S = {}> extends React.Component<CanvasBaseProps 
             e.preventDefault();
             this.setState({
                 contextMenuMousePosition: {
-                    x: e.clientX - 2,
-                    y: e.clientY - 4
+                    X: e.clientX - 2,
+                    Y: e.clientY - 4
                 }
             });
         }
@@ -151,7 +150,7 @@ export class CanvasBase<P = {}, S = {}> extends React.Component<CanvasBaseProps 
                     onClose={handleMenuClose}
                     anchorPosition={
                         this.state.contextMenuMousePosition !== undefined
-                            ? { top: this.state.contextMenuMousePosition.y, left: this.state.contextMenuMousePosition.x }
+                            ? { top: this.state.contextMenuMousePosition.Y, left: this.state.contextMenuMousePosition.X }
                             : undefined
                     }
                 >

@@ -1,7 +1,7 @@
 import { Container, createMuiTheme } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, ThemeProvider } from '@material-ui/core/styles';
 import React from 'react';
-import DDACanvas from './components/Canvas/DDACanvas';
+import BresenhamCanvas from './components/Canvas/BresenhamCanvas';
 import MenuBar from './components/MenuBar';
 import './iconfont.css';
 
@@ -43,7 +43,7 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <MenuBar />
       <Container  >
-        <DDACanvas width={500} height={500} />
+        <BresenhamCanvas width={500} height={500} />
       </Container>
     </ThemeProvider>
   );
