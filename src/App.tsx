@@ -1,52 +1,39 @@
-import { Container, createMuiTheme } from '@material-ui/core';
-import { createStyles, makeStyles, Theme, ThemeProvider } from '@material-ui/core/styles';
-import React from 'react';
-import BresenhamCanvas from './components/Canvas/BresenhamCanvas';
-import MenuBar from './components/MenuBar';
-import './iconfont.css';
+import { Grid } from "@material-ui/core";
+import { ThemeProvider } from "@material-ui/core/styles";
+import { observable } from "mobx";
+import { Provider } from "mobx-react";
+import React from "react";
+import { Canvas } from "./components/Canvas/Canvas";
+import CanvasState from "./components/Canvas/CanvasState";
+import ControlPanel from "./components/ControlPanel";
+import MenuBar from "./components/MenuBar";
+import "./iconfont.css";
+import theme from "./Theme";
 
-const theme = createMuiTheme({
-
-});
-
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    button: {
-      margin: theme.spacing(1)
-    },
-    input: {
-      display: 'none',
-    },
-    toolbar: {
-      display: 'inline-block'
-    },
-    logo: {
-      verticalAlign: 'center'
-    }
-  }),
-);
-
-function randomNum(minNum: number, maxNum: number) {
-  switch (arguments.length) {
-    case 1:
-      return parseInt((Math.random() * minNum + 1).toString(), 10);
-    case 2:
-      return parseInt((Math.random() * (maxNum - minNum + 1) + minNum).toString(), 10);
-    default:
-      return 0;
-  }
-}
+const state = observable(new CanvasState());
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <MenuBar />
-      <Container  >
-        <BresenhamCanvas width={500} height={500} />
-      </Container>
-    </ThemeProvider>
+    <Provider {...state}>
+      <ThemeProvider theme={theme}>
+        <MenuBar />
+        <Grid
+          container
+          direction="row"
+          justify="center"
+          alignItems="flex-start"
+        >
+          <Grid item>
+            {" "}
+            <Canvas stateInstance={state} />
+          </Grid>
+          <Grid container item lg={6}>
+            <ControlPanel stateInstance={state} />
+          </Grid>
+        </Grid>
+      </ThemeProvider>
+    </Provider>
   );
-}
+};
 
 export default App;

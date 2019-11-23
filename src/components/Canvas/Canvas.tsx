@@ -2,10 +2,13 @@ import { Box, createStyles, makeStyles, Theme } from '@material-ui/core';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import clsx from 'clsx';
+import { observable } from 'mobx';
+import { observer } from "mobx-react";
 import React from 'react';
 import { Point, Size } from '../../models/Base';
+import { IHasBorderColor, IHasFillColor } from '../../models/CanvasElements';
+import { CanvasStateWrapper } from './CanvasState';
 
-export type CanvasBaseState = { contextMenuMousePosition?: Point };
 export type CustomDragEventHandlers = {
     onMouseEnter?: React.MouseEventHandler,
     onMouseLeave?: React.MouseEventHandler,
@@ -15,14 +18,8 @@ export type CustomDragEventHandlers = {
 }
 export type InnerCanvasProps = Size & { onContextMenu?: React.MouseEventHandler } & CustomDragEventHandlers
 export type DownloadFileNameType = { downloadFileName?: string };
-export type CanvasBaseProps = Size & CustomDragEventHandlers & { canvasRenderContext?: (ctx: CanvasRenderingContext2D) => void } & DownloadFileNameType;
+export type CanvasProps = CanvasStateWrapper;
 
-/**
- * Canvas Props
- */
-interface CanvasProps {
-    
-}
 
 const usePropsStyles = makeStyles<Theme, Size>({
     canvasSize: {
@@ -57,50 +54,54 @@ const InnerCanvas = React.forwardRef<HTMLCanvasElement, InnerCanvasProps>((props
     />
 });
 
-
-export class CanvasBase<P = {}, S = {}> extends React.Component<CanvasBaseProps & P, CanvasBaseState & S>{
+@observer
+export class Canvas extends React.Component<CanvasProps>{
     private canvas: HTMLCanvasElement = {} as HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D = {} as CanvasRenderingContext2D;
     private ref: React.RefObject<HTMLCanvasElement>;
+    @observable
+    private contextMenuMousePosition?: Point;
 
-    constructor(props: CanvasBaseProps & P) {
+    constructor(props: CanvasProps) {
         super(props);
-        this.state = {} as (CanvasBaseState & S);
         this.ref = React.createRef();
     }
 
     componentDidMount() {
         this.canvas = this.ref.current as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-        if (this.props.canvasRenderContext !== undefined) {
-            this.props.canvasRenderContext(this.ctx);
-        }
     }
 
     componentDidUpdate() {
-        if (this.props.canvasRenderContext !== undefined) {
-            this.props.canvasRenderContext(this.ctx);
+        // 遍历元素队列以绘制所有元素到内部画布中
+        for (const element of this.props.stateInstance.elements) {
+            let elem = element as unknown;
+            if (elem as IHasBorderColor) {
+                (elem as IHasBorderColor).borderPainter.drawTo(this.ctx);
+            }
+            if (elem as IHasFillColor) {
+                (elem as IHasFillColor).fillPainter.drawTo(this.ctx);
+            }
         }
     }
+
 
     render() {
         const handleContextMenu: React.MouseEventHandler = (e) => {
             e.preventDefault();
-            this.setState({
-                contextMenuMousePosition: {
-                    X: e.clientX - 2,
-                    Y: e.clientY - 4
-                }
-            });
+            this.contextMenuMousePosition = {
+                X: e.clientX - 2,
+                Y: e.clientY - 4
+            };
         }
 
         const handleMenuClose: React.MouseEventHandler = (e) => {
-            this.setState({ contextMenuMousePosition: undefined });
+            this.contextMenuMousePosition = undefined;
         }
 
         const handleDownload: React.MouseEventHandler = (e) => {
             let link = document.createElement('a');
-            link.download = "canvas.png";
+            link.download = this.props.stateInstance.downloadFileName;
             link.href = this.canvas.toDataURL("png").replace("image/png", "image/octet-stream");
             link.click();
             handleMenuClose(e);
@@ -110,23 +111,23 @@ export class CanvasBase<P = {}, S = {}> extends React.Component<CanvasBaseProps 
             <Box style={{ position: "relative" }}>
                 <InnerCanvas
                     ref={this.ref}
-                    height={this.props.height}
-                    width={this.props.width}
+                    height={this.props.stateInstance.size.height}
+                    width={this.props.stateInstance.size.width}
                     onContextMenu={handleContextMenu}
-                    onMouseDown={this.props.onMouseDown}
-                    onMouseEnter={this.props.onMouseEnter}
-                    onMouseLeave={this.props.onMouseLeave}
-                    onMouseUp={this.props.onMouseUp}
-                    onMouseMove={this.props.onMouseMove}
+                // onMouseDown={this.props.onMouseDown}
+                // onMouseEnter={this.props.onMouseEnter}
+                // onMouseLeave={this.props.onMouseLeave}
+                // onMouseUp={this.props.onMouseUp}
+                // onMouseMove={this.props.onMouseMove}
                 />
                 <Menu
                     keepMounted
-                    open={this.state.contextMenuMousePosition !== undefined}
+                    open={this.contextMenuMousePosition !== undefined}
                     anchorReference="anchorPosition"
                     onClose={handleMenuClose}
                     anchorPosition={
-                        this.state.contextMenuMousePosition !== undefined
-                            ? { top: this.state.contextMenuMousePosition.Y, left: this.state.contextMenuMousePosition.X }
+                        this.contextMenuMousePosition !== undefined
+                            ? { top: this.contextMenuMousePosition.Y, left: this.contextMenuMousePosition.X }
                             : undefined
                     }
                 >
