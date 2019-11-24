@@ -1,14 +1,12 @@
 import { computed, observable } from "mobx";
-import { Color, Size } from "../models/Base";
+import { Size } from "../models/Base";
 import { CanvasElement } from "../models/CanvasElements";
 
-export class CanvasStore {
+export default class CanvasStore {
   @observable selectedElement?: CanvasElement;
   @observable elements: Array<CanvasElement> = [];
-  @observable selectedBorderColor: Color = Color.black;
-  @observable selectedFillColor: Color = Color.transparent;
   @observable size: Size = { width: 500, height: 500 };
-  @observable downloadFileName = "canvas.png";
+  @observable downloadFileNameFormat = "canvas.png";
 
   @computed
   public get hasSelectedElement(): boolean {
@@ -22,4 +20,10 @@ export class CanvasStore {
     }
     return "null";
   }
+
+  @computed
+  public get downloadFileName(): string {
+    return this.downloadFileName;
+  }
 }
+

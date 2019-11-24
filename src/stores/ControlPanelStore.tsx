@@ -8,53 +8,13 @@
  */
 
 import { action, observable } from "mobx";
-import { Point } from "../models/Base";
-class LineArgumentStore {
-  @observable startPoint: Point;
-  @observable endPoint: Point;
-  @observable borderColor: Color;
-  @observable borderPainter: IBorderPainter;
-  constructor(
-    startPoint: Point,
-    endPoint: Point,
-    borderColor: Color,
-    borderPainter: IBorderPainter
-  ) {
-    this.startPoint = startPoint;
-    this.endPoint = endPoint;
-    this.borderColor = borderColor;
-    this.borderPainter = borderPainter;
-  }
-
-  @action
-  setStartPoint(point: Point) {
-    this.startPoint = point;
-  }
-
-  @action
-  setEndPoint(point: Point) {
-    this.endPoint = point;
-  }
-  @action
-  move(offsetPoint: Point) {
-    this.setStartPoint({
-      X: this.startPoint.X + offsetPoint.X,
-      Y: this.startPoint.Y + offsetPoint.Y
-    });
-    this.setEndPoint({
-      X: this.endPoint.X + offsetPoint.X,
-      Y: this.endPoint.Y + offsetPoint.Y
-    });
-  }
-}
-
 /**
  * **元素名状态存储**
  *
  * 缩写注释解释：
  * - RT: Real Time 实时
  */
-class ElementLabelStore {
+export class ElementLabelStore {
   @observable RT_ElementLabel: string = "";
   @observable newElementLabel: string = "";
   @observable ElementLabelConflict: boolean = false;
@@ -105,21 +65,21 @@ class ElementLabelStore {
  * 控制面板存储
  *
  */
-class ControlPanelStore {
+export default class ControlPanelStore {
   // 元素名存储
-  @observable ElementLabelStore: ElementLabelStore;
+  @observable elementLabelStore: ElementLabelStore;
   // 元素类型名
   @observable elementTypeName: string = "";
   // 当前所选扩展面板标识
   @observable currentSelectedSubPanelId: string = "";
 
   constructor(
-    ElementLabelStore?: ElementLabelStore,
+    elementLabelStore?: ElementLabelStore,
     elementTypeName?: string,
     currentSelectedSubPanelId?: string
   ) {
-    this.ElementLabelStore = ElementLabelStore
-      ? ElementLabelStore
+    this.elementLabelStore = elementLabelStore
+      ? elementLabelStore
       : new ElementLabelStore();
     this.elementTypeName = elementTypeName ? elementTypeName : "";
     this.currentSelectedSubPanelId = currentSelectedSubPanelId
@@ -132,5 +92,3 @@ class ControlPanelStore {
     this.currentSelectedSubPanelId = id;
   }
 }
-
-export default ControlPanelStore;

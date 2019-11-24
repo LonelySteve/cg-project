@@ -1,38 +1,40 @@
 import { Grid } from "@material-ui/core";
 import { ThemeProvider } from "@material-ui/core/styles";
-import { observable } from "mobx";
+import { configure, observable } from "mobx";
 import { Provider } from "mobx-react";
 import React from "react";
 import { Canvas } from "./components/Canvas/Canvas";
-import CanvasState from "./components/Canvas/CanvasState";
-import ControlPanel from "./components/ControlPanel";
 import MenuBar from "./components/MenuBar";
+import OptionsPanel from "./components/OptionsPanel";
 import "./iconfont.css";
+import CanvasStore from "./stores/CanvasStore";
+import ControlPanelStore from "./stores/ControlPanelStore";
 import theme from "./Theme";
+// Mobx 配置加载
+configure({
+  enforceActions: "strict"
+});
 
-const state = observable(new CanvasState());
+const canvasStates = observable(new CanvasStore());
+const controlPanelStates = observable(new ControlPanelStore());
 
 const App: React.FC = () => {
   return (
-    <Provider {...state}>
-      <ThemeProvider theme={theme}>
-        <MenuBar />
-        <Grid
-          container
-          direction="row"
-          justify="center"
-          alignItems="flex-start"
-        >
+    <ThemeProvider theme={theme}>
+      <MenuBar />
+      <Grid container direction="row" justify="center" alignItems="flex-start">
+        <Provider {...canvasStates}>
           <Grid item>
-            {" "}
-            <Canvas stateInstance={state} />
+            <Canvas />
           </Grid>
           <Grid container item lg={6}>
-            <ControlPanel stateInstance={state} />
+            <Provider {...controlPanelStates}>
+              <OptionsPanel />
+            </Provider>
           </Grid>
-        </Grid>
-      </ThemeProvider>
-    </Provider>
+        </Provider>
+      </Grid>
+    </ThemeProvider>
   );
 };
 
