@@ -17,11 +17,17 @@ enum CanvasElementType {
 
 export abstract class CanvasElement {
   private _label: string;
+  private _typeName: string;
 
   painters: PainterBase[] = [];
 
-  constructor(label: string) {
+  constructor(typeName: string, label: string) {
     this._label = label;
+    this._typeName = typeName;
+  }
+
+  public get typeName(): string {
+    return this._typeName;
   }
 
   @action
@@ -68,19 +74,23 @@ export abstract class CanvasElement {
 
 export class Line extends CanvasElement implements IHasBorder {
   borderColor: Color = Color.black;
- 
-  protected _startPoint: Point = { X: 0, Y: 0 };
-  protected _endPoint: Point = { X: 0, Y: 0 };
+
+  protected _startPoint?: Point;
+  protected _endPoint?: Point;
 
   constructor(
     label: string,
-    startPoint: Point,
-    endPoint: Point,
+    startPoint?: Point,
+    endPoint?: Point,
     borderColor?: Color
   ) {
-    super(label);
-    this.startPoint = startPoint;
-    this.endPoint = endPoint;
+    super("line", label);
+    if (startPoint !== undefined) {
+      this.startPoint = startPoint;
+    }
+    if (endPoint !== undefined) {
+      this.endPoint = endPoint;
+    }
     if (borderColor) {
       this.borderColor = borderColor;
     }

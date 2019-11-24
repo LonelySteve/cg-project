@@ -26,4 +26,3 @@ export default class CanvasStore {
     return this.downloadFileName;
   }
 }
-

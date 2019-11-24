@@ -1,4 +1,4 @@
-import { Box, createStyles, makeStyles, Theme } from "@material-ui/core";
+import { createStyles, Grid, makeStyles, Theme } from "@material-ui/core";
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
 import clsx from "clsx";
@@ -6,7 +6,9 @@ import { observable } from "mobx";
 import { inject, observer } from "mobx-react";
 import React from "react";
 import { Point, Size } from "../../models/Base";
-import { CanvasStore } from "../../stores/CanvasStore";
+import CanvasStore from "../../stores/CanvasStore";
+import CanvasToolBar from "./CanvasToolBar";
+import OptionsToolBar from "./OptionsToolBar";
 
 export type CustomDragEventHandlers = {
   onMouseEnter?: React.MouseEventHandler;
@@ -85,81 +87,114 @@ export class Canvas extends React.Component<CanvasProps> {
   componentDidUpdate() {
     if (this.props.canvasStates) {
       // 遍历元素队列以绘制所有元素到内部画布中
-      this.props.canvasStates.elements.forEach(elem => elem.drawTo(this.ctx));
+      // this.props.canvasStates.elements.forEach(elem => elem.drawTo(this.ctx));
     }
   }
 
+  handleContextMenu: React.MouseEventHandler = e => {
+    e.preventDefault();
+    this.contextMenuMousePosition = {
+      X: e.clientX - 2,
+      Y: e.clientY - 4
+    };
+  };
+
+  handleMenuClose: React.MouseEventHandler = e => {
+    this.contextMenuMousePosition = undefined;
+  };
+
+  handleDownload: React.MouseEventHandler = e => {
+    let link = document.createElement("a");
+    link.download =
+      this.props.canvasStates !== undefined
+        ? this.props.canvasStates.downloadFileName
+        : "canvas.png";
+    link.href = this.canvas
+      .toDataURL("png")
+      .replace("image/png", "image/octet-stream");
+    link.click();
+    this.handleMenuClose(e);
+  };
+
+  handleClear: React.MouseEventHandler = e => {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.handleMenuClose(e);
+  };
+
   render() {
-    const handleContextMenu: React.MouseEventHandler = e => {
-      e.preventDefault();
-      this.contextMenuMousePosition = {
-        X: e.clientX - 2,
-        Y: e.clientY - 4
-      };
-    };
-
-    const handleMenuClose: React.MouseEventHandler = e => {
-      this.contextMenuMousePosition = undefined;
-    };
-
-    const handleDownload: React.MouseEventHandler = e => {
-      let link = document.createElement("a");
-      link.download =
-        this.props.canvasStates !== undefined
-          ? this.props.canvasStates.downloadFileName
-          : "canvas.png";
-      link.href = this.canvas
-        .toDataURL("png")
-        .replace("image/png", "image/octet-stream");
-      link.click();
-      handleMenuClose(e);
-    };
-
     return (
-      <Box style={{ position: "relative" }}>
-        <InnerCanvas
-          ref={this.ref}
-          height={
-            this.props.canvasStates ? this.props.canvasStates.size.height : 500
-          }
-          width={
-            this.props.canvasStates ? this.props.canvasStates.size.width : 500
-          }
-          onContextMenu={handleContextMenu}
-          // onMouseDown={this.props.onMouseDown}
-          // onMouseEnter={this.props.onMouseEnter}
-          // onMouseLeave={this.props.onMouseLeave}
-          // onMouseUp={this.props.onMouseUp}
-          // onMouseMove={this.props.onMouseMove}
-        />
-        <Menu
-          keepMounted
-          open={this.contextMenuMousePosition !== undefined}
-          anchorReference="anchorPosition"
-          onClose={handleMenuClose}
-          anchorPosition={
-            this.contextMenuMousePosition !== undefined
-              ? {
-                  top: this.contextMenuMousePosition.Y,
-                  left: this.contextMenuMousePosition.X
-                }
-              : undefined
-          }
+      <Grid
+        container
+        direction="column"
+        justify="flex-start"
+        alignItems="center"
+        spacing={2}
+      >
+        <Grid
+          container
+          item
+          direction="column"
+          justify="flex-start"
+          alignItems="stretch"
         >
-          <MenuItem style={{ minWidth: 150 }}>导入</MenuItem>
-          <MenuItem divider={true} onClick={handleDownload}>
-            下载
-          </MenuItem>
-          <MenuItem
-            onClick={e => {
-              this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-              handleMenuClose(e);
-            }}
+          <Grid item>
+            <OptionsToolBar canvas={this} />
+          </Grid>
+        </Grid>
+
+        <Grid
+          container
+          item
+          direction="row"
+          justify="flex-start"
+          alignItems="flex-start"
+          spacing={2}
+        >
+          <Grid
+            item
+            xs={1}
+            container
+            direction="column"
+            justify="flex-start"
+            alignItems="flex-end"
           >
-            清空
-          </MenuItem>
-        </Menu>
-      </Box>
+            <CanvasToolBar canvas={this} />
+          </Grid>
+          <Grid item xs={11}>
+            <InnerCanvas
+              ref={this.ref}
+              height={700}
+              width={700}
+              onContextMenu={this.handleContextMenu}
+              // onMouseDown={this.props.onMouseDown}
+              // onMouseEnter={this.props.onMouseEnter}
+              // onMouseLeave={this.props.onMouseLeave}
+              // onMouseUp={this.props.onMouseUp}
+              // onMouseMove={this.props.onMouseMove}
+            />
+            <Menu
+              keepMounted
+              open={this.contextMenuMousePosition !== undefined}
+              anchorReference="anchorPosition"
+              onClose={this.handleMenuClose}
+              anchorPosition={
+                this.contextMenuMousePosition !== undefined
+                  ? {
+                      top: this.contextMenuMousePosition.Y,
+                      left: this.contextMenuMousePosition.X
+                    }
+                  : undefined
+              }
+            >
+              <MenuItem style={{ minWidth: 150 }}>导入</MenuItem>
+              <MenuItem divider={true} onClick={this.handleDownload}>
+                下载
+              </MenuItem>
+              <MenuItem onClick={this.handleClear}>清空</MenuItem>
+            </Menu>
+          </Grid>
+        </Grid>
+      </Grid>
     );
   }
 }

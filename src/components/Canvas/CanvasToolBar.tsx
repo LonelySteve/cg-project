@@ -1,19 +1,20 @@
-import { Grid } from "@material-ui/core";
-import AddCircleIcon from "@material-ui/icons/AddCircle";
+import { Card, Divider, Grid, IconButton } from "@material-ui/core";
 import ClearIcon from "@material-ui/icons/Clear";
 import CropIcon from "@material-ui/icons/Crop";
 import FlipToBackIcon from "@material-ui/icons/FlipToBack";
 import FlipToFrontIcon from "@material-ui/icons/FlipToFront";
 import OpenWithIcon from "@material-ui/icons/OpenWith";
-import RemoveCircleIcon from "@material-ui/icons/RemoveCircle";
 import RotateLeftIcon from "@material-ui/icons/RotateLeft";
 import RotateRightIcon from "@material-ui/icons/RotateRight";
 import SaveIcon from "@material-ui/icons/Save";
 import ZoomInIcon from "@material-ui/icons/ZoomIn";
 import ZoomOutIcon from "@material-ui/icons/ZoomOut";
-import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
 import { inject, observer } from "mobx-react";
 import React from "react";
+import CanvasStore from "../../stores/CanvasStore";
+import { Canvas, CanvasProps } from "./Canvas";
+import { useDividerStyles } from "./Style";
+
 /**
  * 画板工具条
  *
@@ -35,67 +36,65 @@ import React from "react";
  * - 栅格化操作
  *   - 裁剪
  */
-const CanvasToolBar = inject()(
-  observer(props => {
-    return (
-      <Grid
-        container
-        item
-        direction="row"
-        justify="space-evenly"
-        alignItems="center"
-      >
-        <Grid item>
-          <ToggleButtonGroup size="medium">
-            <ToggleButton>
-              <ClearIcon />
-            </ToggleButton>
-            <ToggleButton>
-              <SaveIcon />
-            </ToggleButton>
-            <ToggleButton disabled>
-              <ZoomInIcon />
-            </ToggleButton>
-            <ToggleButton disabled>
-              <ZoomOutIcon />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Grid>
+type CanvasToolBarProps = CanvasProps & { canvas: Canvas };
 
-        <Grid item>
-          <ToggleButtonGroup size="medium">
-            <ToggleButton>
-              <AddCircleIcon />
-            </ToggleButton>
-            <ToggleButton>
-              <RemoveCircleIcon />
-            </ToggleButton>
-            <ToggleButton>
-              <RotateLeftIcon />
-            </ToggleButton>
-            <ToggleButton>
-              <RotateRightIcon />
-            </ToggleButton>
-            <ToggleButton>
-              <FlipToFrontIcon />
-            </ToggleButton>
-            <ToggleButton>
-              <FlipToBackIcon />
-            </ToggleButton>
-            <ToggleButton>
-              <OpenWithIcon />
-            </ToggleButton>
-          </ToggleButtonGroup>
+const CanvasToolBar = inject(allStores => ({
+  canvasStates: (allStores as { canvasStates: CanvasStore }).canvasStates
+}))(
+  observer<React.FC<CanvasToolBarProps>>(props => {
+    if (props.canvasStates === undefined) {
+      throw new Error();
+    }
+    // 样式引用
+    const dividerClasses = useDividerStyles();
+    return (
+      <Card>
+        <Grid
+          container
+          item
+          direction="column"
+          justify="center"
+          alignItems="center"
+        >
+          <IconButton>
+            <ClearIcon onClick={props.canvas.handleClear} />
+          </IconButton>
+          <IconButton>
+            <SaveIcon onClick={props.canvas.handleDownload} />
+          </IconButton>
+          <IconButton disabled>
+            <ZoomInIcon />
+          </IconButton>
+          <IconButton disabled>
+            <ZoomOutIcon />
+          </IconButton>
+          {/* 与元素操作有关的按钮，只有当元素选中后才显示 */}
+          {props.canvasStates.hasSelectedElement && (
+            <>
+              <Divider classes={{ root: dividerClasses.Xsmall }} />
+              <IconButton>
+                <RotateLeftIcon />
+              </IconButton>
+              <IconButton>
+                <RotateRightIcon />
+              </IconButton>
+              <IconButton>
+                <FlipToFrontIcon />
+              </IconButton>
+              <IconButton>
+                <FlipToBackIcon />
+              </IconButton>
+              <IconButton>
+                <OpenWithIcon />
+              </IconButton>
+              <Divider classes={{ root: dividerClasses.Xsmall }} />
+              <IconButton>
+                <CropIcon />
+              </IconButton>
+            </>
+          )}
         </Grid>
-        
-        <Grid item>
-          <ToggleButtonGroup>
-            <ToggleButton>
-              <CropIcon />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Grid>
-      </Grid>
+      </Card>
     );
   })
 );
