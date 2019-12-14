@@ -220,8 +220,8 @@ export default abstract class CanvasCommonHandler {
     canvas.removeEventListener("mouseleave", this.mouseLeaveHandler);
     canvas.removeEventListener("mouseover", this.mouseOverHandler);
     canvas.removeEventListener("mouseout", this.mouseOutHandler);
-    canvas.removeEventListener("keydown", this.keyDownHandler);
-    canvas.removeEventListener("keyup", this.KeyUpHandler);
+    document.removeEventListener("keydown", this.keyDownHandler);
+    document.removeEventListener("keyup", this.KeyUpHandler);
 
     this.picker.hide();
   }
@@ -244,6 +244,8 @@ export default abstract class CanvasCommonHandler {
     canvas.addEventListener("mouseleave", this.mouseLeaveHandler);
     canvas.addEventListener("mouseover", this.mouseOverHandler);
     canvas.addEventListener("mouseout", this.mouseOutHandler);
+    document.addEventListener("keydown", this.keyDownHandler);
+    document.addEventListener("keyup", this.KeyUpHandler);
   }
 
   // 供子类实现的事件处理器

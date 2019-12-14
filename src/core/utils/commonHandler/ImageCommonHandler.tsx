@@ -28,6 +28,7 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
     algorithm.stopWork();
     this.applyImageData(); // 清除动画帧残留
     this.draw();
+    this.dragPosition = this.dragPoint = this.dragImagePoint = undefined;
     algorithm.reset();
   }
 
@@ -61,6 +62,21 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
     if (current.inRect(imageRect)) {
       this.dragImagePoint = current;
       return;
+    }
+  };
+
+  protected KeyUpHandler = (event: KeyboardEvent) => {
+    switch (event.key.toLowerCase()) {
+      // 按下回车键确认
+      case "enter":
+        this.acceptImageRect();
+        break;
+      // 按下 Esc 键放弃
+      case "escape":
+        this.abandon();
+        break;
+      default:
+        break;
     }
   };
 
