@@ -1,9 +1,9 @@
 import Point from "../../models/Point";
 import Size, { RoundModeType } from "../../models/Size";
 import { AlgorithmType } from "../Algorithm";
-import LineAlgorithm from "./LineAlgorithm";
+import PolygonAlgorithm from "./PolygonAlgorithm";
 
-export default class DDA extends LineAlgorithm {
+export default class DDA extends PolygonAlgorithm {
   readonly algorithmType: AlgorithmType = "DDA";
 
   roundNumberModeType: RoundModeType = "ceil";

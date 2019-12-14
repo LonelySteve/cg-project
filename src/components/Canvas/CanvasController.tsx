@@ -46,7 +46,6 @@ export type CanvasControllerProps = {
   borderColor?: Color | null;
   fillColor?: Color | null;
   roundMode?: RoundModeType | null;
-  pickerColorType?: ColorType | null;
   // 各种回调函数，负责将 UI 动作传递给上层处理，由上层重传状态量刷新 UI
   onOperateChanged?: (value: OperateType) => void;
   onAlgorithmTypeChanged?: (value: AlgorithmType) => void;
@@ -54,7 +53,6 @@ export type CanvasControllerProps = {
   onBorderColorChanged?: (value: Color) => void; // 一旦触发更新，肯定会传一个确定的 Color 值，而不是 null
   onFillColorChanged?: (value: Color) => void; // 同上
   onRoundMode?: (value: RoundModeType) => void; // 同上
-  onPickerColorType?: (value: ColorType | null | undefined) => void; // 这个比较特别，用户可以取消选中某种颜色类型的 Picker 状态，因此可能得到 null 值
 };
 
 export const CanvasController: React.FC<CanvasControllerProps> = props => {
@@ -83,15 +81,21 @@ export const CanvasController: React.FC<CanvasControllerProps> = props => {
           <path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L5,8.09V15.91L12,19.85L19,15.91V8.09L12,4.15Z" />
         </SvgIcon>
       </ToggleButton>
+      {/* 矩形切换按钮 */}
+      <ToggleButton key={1} value="rectangle" disabled={props.algorithmWorking}>
+        <SvgIcon color="inherit" viewBox="0 0 24 24" fill="transparent">
+          <path d="M18 4H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H6V6h12v12z" />
+        </SvgIcon>
+      </ToggleButton>
       {/* 填充颜色切换按钮 */}
-      <ToggleButton key={1} value="fill" disabled={props.algorithmWorking}>
+      <ToggleButton key={2} value="fill" disabled={props.algorithmWorking}>
         <SvgIcon color="inherit" viewBox="0 0 24 24" fill="transparent">
           <path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15c-.59.59-.59 1.54 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z" />
           <path fillOpacity=".36" d="M0 20h24v4H0z" />
         </SvgIcon>
       </ToggleButton>
       {/* 图片加载按钮 */}
-      <ToggleButton key={2} value="image" disabled={props.algorithmWorking}>
+      <ToggleButton key={3} value="image" disabled={props.algorithmWorking}>
         <SvgIcon color="inherit" viewBox="0 0 24 24" fill="transparent">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -194,7 +198,7 @@ export const CanvasController: React.FC<CanvasControllerProps> = props => {
       </FormControl>
     );
 
-  props.pickerColorType !== null &&
+  (props.borderColor || props.fillColor) &&
     algorithmArgsComponents.push(
       <ColorToggleButtonGroup
         picker={props.canvasCommonHandler.picker}
@@ -286,7 +290,6 @@ export const CanvasController: React.FC<CanvasControllerProps> = props => {
         <Grid item className={classes.gridItem}>
           {operateToggleButtonGroup}
         </Grid>
-        {/* TODO 添加 AcceptButtonGroup */}
         <Divider orientation="vertical" className={classes.divider} />
         <Grid item className={classes.gridItem}>
           {functionButtonGroup}

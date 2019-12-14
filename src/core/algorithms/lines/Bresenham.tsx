@@ -1,7 +1,7 @@
 import Point from "../../models/Point";
-import LineAlgorithm from "./LineAlgorithm";
+import PolygonAlgorithm from "./PolygonAlgorithm";
 
-export default class Bresenham extends LineAlgorithm {
+export default class Bresenham extends PolygonAlgorithm {
   readonly algorithmType = "Bresenham";
 
   protected lineTwoPoints(startPoint: Point, endPoint: Point) {

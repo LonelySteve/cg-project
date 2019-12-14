@@ -56,38 +56,42 @@ export const copyRect = (rect: Rect): Rect => {
 };
 
 export const getPoint = (rect: Rect, position: Position): Point => {
-  // 九个位置，四种象限，共 36 种情况
-  const rectTmp = copyRect(rect);
+  // 九个位置，四种象限，应共 36 种情况
+
   // 标准化，反正尺寸信息对该函数的实现意义不大，这样做能避免对 36 种情况的枚举
-  standardization(rectTmp);
+  const standardRect = standardization(copyRect(rect));
 
   switch (position) {
     case Position.center:
-      return rectTmp.origin
+      return standardRect.origin
         .copy()
-        .addSize(rectTmp.size.width / 2, rectTmp.size.height / 2);
+        .addSize(standardRect.size.width / 2, standardRect.size.height / 2);
     case Position.leftUp:
-      return rectTmp.origin.copy();
+      return standardRect.origin.copy();
     case Position.up:
-      return rectTmp.origin.copy().addSize(rectTmp.size.width / 2, 0);
+      return standardRect.origin.copy().addSize(standardRect.size.width / 2, 0);
     case Position.rightUp:
-      return rectTmp.origin.copy().addSize(rectTmp.size.width, 0);
+      return standardRect.origin.copy().addSize(standardRect.size.width, 0);
     case Position.right:
-      return rectTmp.origin
+      return standardRect.origin
         .copy()
-        .addSize(rectTmp.size.width - 1, rectTmp.size.height / 2);
+        .addSize(standardRect.size.width - 1, standardRect.size.height / 2);
     case Position.rightDown:
-      return rectTmp.origin
+      return standardRect.origin
         .copy()
-        .addSize(rectTmp.size.width - 1, rectTmp.size.height - 1);
+        .addSize(standardRect.size.width - 1, standardRect.size.height - 1);
     case Position.down:
-      return rectTmp.origin
+      return standardRect.origin
         .copy()
-        .addSize(rectTmp.size.width / 2, rectTmp.size.height - 1);
+        .addSize(standardRect.size.width / 2, standardRect.size.height - 1);
     case Position.leftDown:
-      return rectTmp.origin.copy().addSize(0, rectTmp.size.height - 1);
+      return standardRect.origin
+        .copy()
+        .addSize(0, standardRect.size.height - 1);
     case Position.left:
-      return rectTmp.origin.copy().addSize(0, rectTmp.size.height / 2);
+      return standardRect.origin
+        .copy()
+        .addSize(0, standardRect.size.height / 2);
   }
 };
 

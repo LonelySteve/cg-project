@@ -1,6 +1,6 @@
 import Color from "../../models/Color";
 import Point from "../../models/Point";
-import { IHasBorderColor } from "../lines/LineAlgorithm";
+import { IHasBorderColor } from "../lines/PolygonAlgorithm";
 import StackAlgorithm from "../StackAlgorithm";
 
 export interface IHasFillColor {

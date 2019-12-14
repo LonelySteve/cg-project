@@ -1,26 +1,15 @@
 import Algorithm, { AlgorithmType } from "../../algorithms/Algorithm";
 import Color from "../../models/Color";
 import ImageDataEx from "../../models/ImageDataEx";
+import Point from "../../models/Point";
 import Picker from "../Picker";
 
-export interface ReactMouseEventCommonHandler<T = Element> {
-  mouseUpHandler?: React.MouseEventHandler<T>;
-  mouseDownHandler?: React.MouseEventHandler<T>;
-  mouseEnterHandler?: React.MouseEventHandler<T>;
-  mouseMoveHandler?: React.MouseEventHandler<T>;
-  mouseLeaveHandler?: React.MouseEventHandler<T>;
-  mouseOverHandler?: React.MouseEventHandler<T>;
-  mouseOutHandler?: React.MouseEventHandler<T>;
-  clickHandler?: React.MouseEventHandler<T>;
-}
-
-export type OperateType = "polygon" | "image" | "fill";
+export type OperateType = "polygon" | "image" | "fill" | "rectangle";
 
 /**
  * Canvas 公用处理器基类
  */
-export default abstract class CanvasCommonHandler
-  implements ReactMouseEventCommonHandler<HTMLCanvasElement> {
+export default abstract class CanvasCommonHandler {
   /**
    * 标识当前处理器进行的操作类型，这是一个只读字段
    */
@@ -161,11 +150,40 @@ export default abstract class CanvasCommonHandler
    *
    * @param v 欲应用到当前 canvas 的图像数据，如果缺省，则使用本对象的缓存
    */
-  public applyImageData(v?: ImageData) {
+  public applyImageData(
+    v?: ImageData,
+    dx?: number,
+    dy?: number,
+    dirtyX?: number,
+    dirtyY?: number,
+    dirtyWidth?: number,
+    dirtyHeight?: number
+  ) {
+    dx = dx || 0;
+    dy = dy || 0;
     const imageData = v || this.imageData;
-    // 记得先清空画布
-    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    this.ctx.putImageData(imageData, 0, 0);
+    this.ctx.save();
+    // 根据传入参数有效性调用 putImageData 的不同重载
+    if (
+      dirtyX !== undefined &&
+      dirtyY !== undefined &&
+      dirtyWidth !== undefined &&
+      dirtyHeight !== undefined
+    ) {
+      this.ctx.putImageData(
+        imageData,
+        dx,
+        dy,
+        dirtyX,
+        dirtyY,
+        dirtyWidth,
+        dirtyHeight
+      );
+    } else {
+      this.ctx.putImageData(imageData, dx, dy);
+    }
+
+    this.ctx.restore();
   }
   /**
    * 清空 canvas 内容
@@ -179,20 +197,132 @@ export default abstract class CanvasCommonHandler
     this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
   }
 
-  /**
-   * 当前修改 commonHandler 后被调用
-   */
-  public _onChanged(): void {}
+  // commonHandler 的生命周期钩子
+
+  // 当设置准备就绪，准备正式使用此 commonHandler 时调用
+  public load() {
+    this.resume();
+  }
+  // 当不希望此 commonHandler 执行其功能时调用
+  public suspend() {
+    const canvas = this.getCanvasHTMLElement();
+    // 移除事件监听
+
+    // Picker
+    canvas.removeEventListener("mousemove", this.pickerMouseMoveHandler);
+    canvas.removeEventListener("mouseup", this.pickerMouseUpHandler);
+    document.removeEventListener("keyup", this.pickerKeyUpHandler);
+    // 子类
+    canvas.removeEventListener("mouseup", this.mouseUpHandler);
+    canvas.removeEventListener("mousedown", this.mouseDownHandler);
+    canvas.removeEventListener("mouseenter", this.mouseEnterHandler);
+    canvas.removeEventListener("mousemove", this.mouseMoveHandler);
+    canvas.removeEventListener("mouseleave", this.mouseLeaveHandler);
+    canvas.removeEventListener("mouseover", this.mouseOverHandler);
+    canvas.removeEventListener("mouseout", this.mouseOutHandler);
+    document.removeEventListener("keydown", this.keyDownHandler);
+    document.removeEventListener("keyup", this.KeyUpHandler);
+
+    this.picker.hide();
+  }
+  // 从 suspend 状态中恢复使用时调用
+  public resume() {
+    const canvas = this.getCanvasHTMLElement();
+    // 先移除一遍事件监听，以免反复添加相同的事件监听
+    this.suspend();
+    // 开始添加事件监听
+
+    // Picker
+    canvas.addEventListener("mousemove", this.pickerMouseMoveHandler);
+    canvas.addEventListener("mouseup", this.pickerMouseUpHandler);
+    document.addEventListener("keyup", this.pickerKeyUpHandler);
+    // 子类
+    canvas.addEventListener("mouseup", this.mouseUpHandler);
+    canvas.addEventListener("mousedown", this.mouseDownHandler);
+    canvas.addEventListener("mouseenter", this.mouseEnterHandler);
+    canvas.addEventListener("mousemove", this.mouseMoveHandler);
+    canvas.addEventListener("mouseleave", this.mouseLeaveHandler);
+    canvas.addEventListener("mouseover", this.mouseOverHandler);
+    canvas.addEventListener("mouseout", this.mouseOutHandler);
+    document.addEventListener("keydown", this.keyDownHandler);
+    document.addEventListener("keyup", this.KeyUpHandler);
+  }
 
   // 供子类实现的事件处理器
-  mouseUpHandler?: React.MouseEventHandler<HTMLCanvasElement>;
-  mouseDownHandler?: React.MouseEventHandler<HTMLCanvasElement>;
-  mouseEnterHandler?: React.MouseEventHandler<HTMLCanvasElement>;
-  mouseMoveHandler?: React.MouseEventHandler<HTMLCanvasElement>;
-  mouseLeaveHandler?: React.MouseEventHandler<HTMLCanvasElement>;
-  mouseOverHandler?: React.MouseEventHandler<HTMLCanvasElement>;
-  mouseOutHandler?: React.MouseEventHandler<HTMLCanvasElement>;
-  clickHandler?: React.MouseEventHandler<HTMLCanvasElement>;
+  protected mouseUpHandler = (ev: MouseEvent) => {};
+  protected mouseDownHandler = (ev: MouseEvent) => {};
+  protected mouseEnterHandler = (ev: MouseEvent) => {};
+  protected mouseMoveHandler = (ev: MouseEvent) => {};
+  protected mouseLeaveHandler = (ev: MouseEvent) => {};
+  protected mouseOverHandler = (ev: MouseEvent) => {};
+  protected mouseOutHandler = (ev: MouseEvent) => {};
+  protected clickHandler = (ev: MouseEvent) => {};
+  protected keyDownHandler = (ev: KeyboardEvent) => {};
+  protected KeyUpHandler = (ev: KeyboardEvent) => {};
+
+  private pickerMouseMoveHandler = (ev: MouseEvent) => {
+    this.picker.pickPoint = new Point(ev.offsetX, ev.offsetY);
+  };
+
+  private pickerMouseUpHandler = (ev: MouseEvent) => {
+    // 如果当前 picker 显示中，则不让其他事件处理程序被调用
+    if (this.picker.isShow) ev.stopImmediatePropagation();
+
+    switch (ev.button) {
+      // 左键
+      case 0:
+        this.picker.accept();
+        this.picker.hide();
+        break;
+      // 右键
+      case 2:
+        this.picker.hide();
+        break;
+      default:
+        break;
+    }
+  };
+
+  private pickerKeyUpHandler = (ev: KeyboardEvent) => {
+    // 不允许算法工作时使用 Picker
+    if (this.getAlgorithm().working) return;
+
+    switch (ev.key.toLowerCase()) {
+      case "z":
+        this.picker.toggle();
+        break;
+      case "enter":
+        this.picker.accept();
+        this.picker.hide();
+        break;
+      case "escape":
+        this.picker.hide();
+        break;
+      default:
+        break;
+    }
+
+    if (this.picker.isShow) {
+      if (this.picker.pickPoint) {
+        switch (ev.key) {
+          case "ArrowUp":
+            this.picker.pickPoint = this.picker.pickPoint.up;
+            break;
+          case "ArrowDown":
+            this.picker.pickPoint = this.picker.pickPoint.down;
+            break;
+          case "ArrowLeft":
+            this.picker.pickPoint = this.picker.pickPoint.left;
+            break;
+          case "ArrowRight":
+            this.picker.pickPoint = this.picker.pickPoint.right;
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  };
 
   /**
    * 以当前的缓存或canvas图片数据为基础，在这之上用内部算法绘制内容后返回新的图片数据

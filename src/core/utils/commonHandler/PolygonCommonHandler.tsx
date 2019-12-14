@@ -1,9 +1,7 @@
 import { AlgorithmType } from "../../algorithms/Algorithm";
-import LineAlgorithm from "../../algorithms/lines/LineAlgorithm";
+import PolygonAlgorithm from "../../algorithms/lines/PolygonAlgorithm";
 import Point from "../../models/Point";
 import CanvasCommonHandler from "./CanvasCommonHandler";
-
-
 
 /**
  * 多边形公用鼠标处理器
@@ -18,29 +16,25 @@ export class PolygonCommonHandler extends CanvasCommonHandler {
   readonly operateType = "polygon";
   readonly supportedAlgorithmTypes = ["DDA", "Bresenham"] as AlgorithmType[];
 
-  mouseUpHandler: React.MouseEventHandler<HTMLCanvasElement> = event => {
-    if (this.picker.isEnable) {
-      return;
-    }
-    const lineAlgorithm = this.getAlgorithm() as LineAlgorithm;
+  protected mouseUpHandler = (event: MouseEvent) => {
+    const lineAlgorithm = this.getAlgorithm() as PolygonAlgorithm;
     switch (event.button) {
       // 左键
       case 0:
+        // 用户点击起始点闭合多边形的工作
+        if (
+          lineAlgorithm.points.length > 0 &&
+          new Point(event.offsetX, event.offsetY).measureDistance(
+            lineAlgorithm.points[0]
+          ) < 5
+        ) {
+          lineAlgorithm.stopWork();
+          this.draw();
+          lineAlgorithm.reset();
+          return;
+        }
         lineAlgorithm.startWork();
-        lineAlgorithm.addPoint(
-          new Point(event.nativeEvent.offsetX, event.nativeEvent.offsetY)
-        );
-        // TODO 用户点击起始点闭合多边形的工作
-        // if (
-        //   new Point(
-        //     event.nativeEvent.offsetX,
-        //     event.nativeEvent.offsetY
-        //   ).measureDistance(lineAlgorithm.points[0]) < 5
-        // ) {
-        //   lineAlgorithm.stopWork();
-        //   this.draw();
-        //   lineAlgorithm.reset();
-        // }
+        lineAlgorithm.addPoint(new Point(event.offsetX, event.offsetY));
         break;
       // 中键
       case 1:
@@ -56,21 +50,16 @@ export class PolygonCommonHandler extends CanvasCommonHandler {
     }
   };
 
-  mouseMoveHandler: React.MouseEventHandler<HTMLCanvasElement> = event => {
-    if (this.picker.isEnable) {
-      return;
-    }
-    this.drawAnimateFrame(
-      new Point(event.nativeEvent.offsetX, event.nativeEvent.offsetY)
-    );
+  protected mouseMoveHandler = (event: MouseEvent) => {
+    this.drawAnimateFrame(new Point(event.offsetX, event.offsetY));
   };
 
-  protected drawAnimateFrame(currentPoint: Point) {
-    const lineAlgorithm = this.getAlgorithm() as LineAlgorithm;
+  protected drawAnimateFrame = (currentPoint: Point) => {
+    const lineAlgorithm = this.getAlgorithm() as PolygonAlgorithm;
     if (lineAlgorithm.working) {
       lineAlgorithm.addPoint(currentPoint);
       this.drawOneFrame();
       lineAlgorithm.popPoint();
     }
-  }
+  };
 }

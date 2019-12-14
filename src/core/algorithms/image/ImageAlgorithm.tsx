@@ -50,6 +50,9 @@ export default abstract class ImageAlgorithm extends Algorithm {
 
   public applyImageRect() {
     this.imageRect = this._imageRect;
+    if (this.imageRect === undefined) return;
+    this.imageRect.origin.round();
+    this.imageRect.size.round();
   }
 
   public getCtx(): CanvasRenderingContext2D {
@@ -93,7 +96,7 @@ export default abstract class ImageAlgorithm extends Algorithm {
         (canvasWidth - scaledImageWidth) / 2,
         (canvasHeight - scaledImageHeight) / 2
       ).round(),
-      size: new Size(scaledImageWidth, scaledImageHeight)
+      size: new Size(scaledImageWidth, scaledImageHeight).round()
     };
   }
 
@@ -102,14 +105,15 @@ export default abstract class ImageAlgorithm extends Algorithm {
       edgeLength === undefined || edgeLength <= 0
         ? this.edgeLength
         : edgeLength;
+
     const imageRect = this.getWorkingImageRect();
-    if (imageRect === undefined) {
-      throw new Error("未知图像尺寸");
-    }
+    if (imageRect === undefined) return;
+
     // 为了提示用户其未完成状态，故需绘制一个边框，并且，为了视觉效果，该边框还必须与背景色进行黑白反色工作
     imageData.reverseRectBorderColor(imageRect);
     // 接下来绘制八个框框，这八个框框分别位于图像的 左上，上，右上，右，右下，下，左下，左
     const drawRectByCenterPoint = (point: Point) => {
+      point.round();
       imageData.reverseRectBorderColor({
         origin: new Point(point.X - edge / 2, point.Y - edge / 2),
         size: new Size(edge, edge)

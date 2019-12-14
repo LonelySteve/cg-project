@@ -11,16 +11,14 @@ export default class FillCommonHandler extends CanvasCommonHandler {
     "ScanLineSeedFill"
   ] as AlgorithmType[];
 
-  clickHandler: React.MouseEventHandler<HTMLCanvasElement> = event => {
-    if (this.picker.isEnable) {
+  protected mouseUpHandler = (event: MouseEvent) => {
+    if (this.picker.isShow) {
       return;
     }
     const algorithm = this.getAlgorithm() as AreaFourNeighborContactSeedFill;
     algorithm
       .startWork()
-      .setSeedPoint(
-        new Point(event.nativeEvent.offsetX, event.nativeEvent.offsetY)
-      )
+      .setSeedPoint(new Point(event.offsetX, event.offsetY))
       .stopWork();
     this.draw();
   };

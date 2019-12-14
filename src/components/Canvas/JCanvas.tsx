@@ -7,16 +7,16 @@ import ScanLineSeedFill from "../../core/algorithms/fill/ScanLineSeedFill";
 import ImageInternalAlgorithm from "../../core/algorithms/image/ImageInternalAlgorithm";
 import Bresenham from "../../core/algorithms/lines/Bresenham";
 import DDA from "../../core/algorithms/lines/DDA";
-import { IHasBorderColor } from "../../core/algorithms/lines/LineAlgorithm";
+import { IHasBorderColor } from "../../core/algorithms/lines/PolygonAlgorithm";
 import Color from "../../core/models/Color";
 import { RoundModeType } from "../../core/models/Size";
 import CanvasCommonHandler, { OperateType } from "../../core/utils/commonHandler/CanvasCommonHandler";
 import FillCommonHandler from "../../core/utils/commonHandler/FillCommonHandler";
 import ImageCommonHandler from "../../core/utils/commonHandler/ImageCommonHandler";
 import { PolygonCommonHandler } from "../../core/utils/commonHandler/PolygonCommonHandler";
+import RectangleCommonHandler from "../../core/utils/commonHandler/RectangleCommonHandler";
 import { CanvasArea, CanvasSize } from "./CanvasArea";
 import { CanvasController } from "./CanvasController";
-import { ColorType } from "./ColorToggleButtonGroup";
 
 const useStyles = makeStyles(theme => ({
   canvasController: {
@@ -33,11 +33,13 @@ const canvasCommonHandlerCache: {
     | PolygonCommonHandler
     | FillCommonHandler
     | ImageCommonHandler
+    | RectangleCommonHandler
     | null;
 } = {
   polygon: new PolygonCommonHandler(),
   fill: new FillCommonHandler(),
-  image: new ImageCommonHandler()
+  image: new ImageCommonHandler(),
+  rectangle: new RectangleCommonHandler()
 };
 
 export const algorithmCache: { [index in AlgorithmType]: any } = {
@@ -106,9 +108,8 @@ const getCommonHandlerInstance = (
   canvasCommonHandler.imageData = oldCommonHandlerInstance.imageData;
 
   // 对旧的处理器的资源进行管理
-
-  // 关闭旧处理器的 Picker
-  oldCommonHandlerInstance.picker.disable();
+  canvasCommonHandler.resume();
+  oldCommonHandlerInstance.suspend();
 
   return canvasCommonHandler;
 };
@@ -171,10 +172,6 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
     (algorithm as any).fillColor || null
   );
 
-  const [pickerColorType, setPickerColorType] = useState<
-    ColorType | undefined | null
-  >();
-
   const [roundMode, setRoundMode] = useState<RoundModeType | undefined | null>(
     (algorithm as DDA).roundNumberModeType
   );
@@ -203,13 +200,11 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
         setBorderColor(a.borderColor);
         setFillColor(a.fillColor);
         setRoundMode(null);
-        setPickerColorType(undefined);
         break;
       case "_InternalImage":
         setBorderColor(null);
         setFillColor(null);
         setRoundMode(null);
-        setPickerColorType(null);
         break;
       default:
         break;
@@ -227,7 +222,6 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
           borderColor={borderColor}
           fillColor={fillColor}
           roundMode={roundMode}
-          pickerColorType={pickerColorType}
           onOperateChanged={value => {
             const newCommonHandler = getCommonHandlerInstance(
               value,
@@ -257,15 +251,6 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
             (algorithm as any).roundNumberModeType = value;
             setRoundMode(value);
           }}
-          onPickerColorType={value => {
-            commonHandler.picker.colorType = pickerColorType || undefined;
-            if (value) {
-              commonHandler.picker.enable();
-            } else {
-              commonHandler.picker.disable();
-            }
-            setPickerColorType(value);
-          }}
         />
       </Grid>
 
@@ -274,7 +259,9 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
           <CanvasArea
             ref={canvasRef}
             {...(props as CanvasSize)}
-            commonHandler={commonHandler}
+            onLoad={() => {
+              commonHandler.load();
+            }}
           />
         </Paper>
       </Grid>

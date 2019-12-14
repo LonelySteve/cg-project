@@ -1,9 +1,8 @@
-import { Box, FormLabel, makeStyles, SvgIcon } from "@material-ui/core";
-import { ToggleButton, ToggleButtonGroup } from "@material-ui/lab";
+import { Box, Button, ButtonGroup, FormLabel, makeStyles, SvgIcon } from "@material-ui/core";
 import React, { useState } from "react";
 import { ColorChangeHandler, SketchPicker } from "react-color";
 import Color from "../../core/models/Color";
-import Picker, { PickHandler } from "../../core/utils/Picker";
+import Picker from "../../core/utils/Picker";
 
 const useStyles = makeStyles(theme => ({
   popOver: {
@@ -42,22 +41,6 @@ export const ColorToggleButtonGroup: React.FC<ColorToggleButtonGroupProps> = pro
     ColorType | undefined
   >();
 
-  const colorPickHandler: PickHandler = event => {
-    if (!event.detail) {
-      return;
-    }
-    const pickerColorType = event.detail.pickColorType as ColorType;
-    // pickerColorType 有可能为 undefined，出现这种情况说明有可能 picker 当前工作模式为取点
-    if (pickerColorType) {
-      props.onColorChanged &&
-        props.onColorChanged(pickerColorType, event.detail.pickColor);
-    }
-  };
-
-  // 重新绑定监听器
-  document.removeEventListener("onPick", colorPickHandler);
-  document.addEventListener("onPick", colorPickHandler);
-
   const handleChange: ColorChangeHandler = color => {
     const myColor = Color.fromColorResult(color);
     props.onColorChanged &&
@@ -65,15 +48,24 @@ export const ColorToggleButtonGroup: React.FC<ColorToggleButtonGroupProps> = pro
       props.onColorChanged(colorPickerColorType, myColor);
   };
 
-  const handleClick: React.MouseEventHandler = event => {
-    const value = (event.currentTarget as HTMLButtonElement).value as ColorType;
-    // 判断用户是否同时按下 shift
-    if (event.shiftKey) {
-      props.picker.colorType = value;
-      props.picker.enable();
-      return;
+  const handleMouseUp: React.MouseEventHandler = event => {
+    const colorType = (event.currentTarget as HTMLButtonElement)
+      .value as ColorType;
+    console.log(`${props.picker.acceptPickPointColor}`);
+    switch (event.button) {
+      // 左键
+      case 0:
+        setColorPickerColorType(colorType);
+        break;
+      // 右键
+      case 2:
+        props.onColorChanged &&
+          props.picker.acceptPickPointColor &&
+          props.onColorChanged(colorType, props.picker.acceptPickPointColor);
+        break;
+      default:
+        break;
     }
-    setColorPickerColorType(value);
   };
 
   const content = (color: Color, text: string) => (
@@ -105,13 +97,12 @@ export const ColorToggleButtonGroup: React.FC<ColorToggleButtonGroupProps> = pro
         e.stopPropagation();
       }}
     >
-      <ToggleButtonGroup exclusive size="small" value={props.picker.colorType}>
+      <ButtonGroup size="small">
         {/* 填充颜色 */}
         {colors["fill"] !== null && (
-          <ToggleButton
-            key={1}
+          <Button
             value="fill"
-            onClick={handleClick}
+            onMouseUp={handleMouseUp}
             style={{
               background: (colors["fill"] || Color.black).cssStyle
             }}
@@ -120,14 +111,13 @@ export const ColorToggleButtonGroup: React.FC<ColorToggleButtonGroupProps> = pro
               colors["fill"] || Color.black,
               labels["fill"] || "填充颜色"
             )}
-          </ToggleButton>
+          </Button>
         )}
         {/* 边框颜色 */}
         {colors["border"] !== null && (
-          <ToggleButton
-            key={2}
+          <Button
             value="border"
-            onClick={handleClick}
+            onMouseUp={handleMouseUp}
             style={{
               background: (colors["border"] || Color.black).cssStyle
             }}
@@ -136,9 +126,9 @@ export const ColorToggleButtonGroup: React.FC<ColorToggleButtonGroupProps> = pro
               colors["border"] || Color.black,
               labels["border"] || "边框颜色"
             )}
-          </ToggleButton>
+          </Button>
         )}
-      </ToggleButtonGroup>
+      </ButtonGroup>
       {/* 视状态不同显示或隐藏 ColorPicker */}
       {colorPickerColorType ? (
         <Box className={classes.popOver}>
