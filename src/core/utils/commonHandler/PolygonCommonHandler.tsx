@@ -26,21 +26,23 @@ export class PolygonCommonHandler extends CanvasCommonHandler {
     switch (event.button) {
       // 左键
       case 0:
+        // 用户点击起始点闭合多边形的工作
+        if (
+          lineAlgorithm.points.length > 0 &&
+          new Point(
+            event.nativeEvent.offsetX,
+            event.nativeEvent.offsetY
+          ).measureDistance(lineAlgorithm.points[0]) < 5
+        ) {
+          lineAlgorithm.stopWork();
+          this.draw();
+          lineAlgorithm.reset();
+          return;
+        }
         lineAlgorithm.startWork();
         lineAlgorithm.addPoint(
           new Point(event.nativeEvent.offsetX, event.nativeEvent.offsetY)
         );
-        // TODO 用户点击起始点闭合多边形的工作
-        // if (
-        //   new Point(
-        //     event.nativeEvent.offsetX,
-        //     event.nativeEvent.offsetY
-        //   ).measureDistance(lineAlgorithm.points[0]) < 5
-        // ) {
-        //   lineAlgorithm.stopWork();
-        //   this.draw();
-        //   lineAlgorithm.reset();
-        // }
         break;
       // 中键
       case 1:
