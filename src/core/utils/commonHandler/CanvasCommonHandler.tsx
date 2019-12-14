@@ -179,11 +179,6 @@ export default abstract class CanvasCommonHandler
     this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
   }
 
-  /**
-   * 当前修改 commonHandler 后被调用
-   */
-  public _onChanged(): void {}
-
   // 供子类实现的事件处理器
   mouseUpHandler?: React.MouseEventHandler<HTMLCanvasElement>;
   mouseDownHandler?: React.MouseEventHandler<HTMLCanvasElement>;

@@ -286,7 +286,6 @@ export const CanvasController: React.FC<CanvasControllerProps> = props => {
         <Grid item className={classes.gridItem}>
           {operateToggleButtonGroup}
         </Grid>
-        {/* TODO 添加 AcceptButtonGroup */}
         <Divider orientation="vertical" className={classes.divider} />
         <Grid item className={classes.gridItem}>
           {functionButtonGroup}
