@@ -66,6 +66,23 @@ export default class Point {
     return new Point(point1.X - offset.width, point1.Y - offset.height);
   }
 
+  public static constraint(point: Point, areaRect: Rect) {
+    const [x, y] = this._constraint(point, areaRect);
+    return new Point(x, y);
+  }
+
+  private static _constraint(point: Point, areaRect: Rect): [number, number] {
+    const newX = Math.max(
+      Math.min(point.X, areaRect.origin.X + areaRect.size.width),
+      areaRect.origin.X
+    );
+    const newY = Math.max(
+      Math.min(point.Y, areaRect.origin.Y + areaRect.size.height),
+      areaRect.origin.Y
+    );
+    return [newX, newY];
+  }
+
   public equals(point: Point): boolean {
     return this.X === point.X && this.Y === point.Y;
   }
@@ -107,22 +124,25 @@ export default class Point {
    * @param strict 是否启用严格模式，在该模式下，如果当前点不满足当前约束矩形区域，则抛出异常，默认不启用
    */
   public constraint(areaRect: Rect, strict?: boolean) {
-    const newX = Math.max(
-      Math.min(this.X, areaRect.origin.X + areaRect.size.width),
-      areaRect.origin.X
-    );
-    const newY = Math.max(
-      Math.min(this.Y, areaRect.origin.Y + areaRect.size.height),
-      areaRect.origin.Y
-    );
-    if (strict && newX !== this.X && newY !== this.Y) {
+    const [x, y] = Point._constraint(this, areaRect);
+    if (strict && x !== this.X && y !== this.Y) {
       throw new Error(
         `${this} 不满足指定约束矩形区域：Rect: (${areaRect.origin}, ${areaRect.size})`
       );
     }
-    this.X = newX;
-    this.Y = newY;
+    this.X = x;
+    this.Y = y;
     return this;
+  }
+
+  /**
+   * 判断当前点是否在指定矩形区域内
+   *
+   * @param rect 指定矩形区域
+   */
+  public inRect(rect: Rect): boolean {
+    const [x, y] = Point._constraint(this, rect);
+    return x === this.X && y === this.Y;
   }
 
   /**

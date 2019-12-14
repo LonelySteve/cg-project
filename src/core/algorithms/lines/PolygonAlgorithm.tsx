@@ -13,7 +13,7 @@ export function instanceOfHasBorderColor(
   return "borderColor" in object;
 }
 
-export default abstract class LineAlgorithm extends StackAlgorithm
+export default abstract class PolygonAlgorithm extends StackAlgorithm
   implements IHasBorderColor {
   public borderColor: Color = Color.black;
 

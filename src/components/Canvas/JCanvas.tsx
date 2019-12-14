@@ -7,13 +7,14 @@ import ScanLineSeedFill from "../../core/algorithms/fill/ScanLineSeedFill";
 import ImageInternalAlgorithm from "../../core/algorithms/image/ImageInternalAlgorithm";
 import Bresenham from "../../core/algorithms/lines/Bresenham";
 import DDA from "../../core/algorithms/lines/DDA";
-import { IHasBorderColor } from "../../core/algorithms/lines/LineAlgorithm";
+import { IHasBorderColor } from "../../core/algorithms/lines/PolygonAlgorithm";
 import Color from "../../core/models/Color";
 import { RoundModeType } from "../../core/models/Size";
 import CanvasCommonHandler, { OperateType } from "../../core/utils/commonHandler/CanvasCommonHandler";
 import FillCommonHandler from "../../core/utils/commonHandler/FillCommonHandler";
 import ImageCommonHandler from "../../core/utils/commonHandler/ImageCommonHandler";
 import { PolygonCommonHandler } from "../../core/utils/commonHandler/PolygonCommonHandler";
+import RectangleCommonHandler from "../../core/utils/commonHandler/RectangleCommonHandler";
 import { CanvasArea, CanvasSize } from "./CanvasArea";
 import { CanvasController } from "./CanvasController";
 
@@ -32,11 +33,13 @@ const canvasCommonHandlerCache: {
     | PolygonCommonHandler
     | FillCommonHandler
     | ImageCommonHandler
+    | RectangleCommonHandler
     | null;
 } = {
   polygon: new PolygonCommonHandler(),
   fill: new FillCommonHandler(),
-  image: new ImageCommonHandler()
+  image: new ImageCommonHandler(),
+  rectangle: new RectangleCommonHandler()
 };
 
 export const algorithmCache: { [index in AlgorithmType]: any } = {

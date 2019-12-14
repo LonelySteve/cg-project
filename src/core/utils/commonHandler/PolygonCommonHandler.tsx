@@ -1,5 +1,5 @@
 import { AlgorithmType } from "../../algorithms/Algorithm";
-import LineAlgorithm from "../../algorithms/lines/LineAlgorithm";
+import PolygonAlgorithm from "../../algorithms/lines/PolygonAlgorithm";
 import Point from "../../models/Point";
 import CanvasCommonHandler from "./CanvasCommonHandler";
 
@@ -17,7 +17,7 @@ export class PolygonCommonHandler extends CanvasCommonHandler {
   readonly supportedAlgorithmTypes = ["DDA", "Bresenham"] as AlgorithmType[];
 
   protected mouseUpHandler = (event: MouseEvent) => {
-    const lineAlgorithm = this.getAlgorithm() as LineAlgorithm;
+    const lineAlgorithm = this.getAlgorithm() as PolygonAlgorithm;
     switch (event.button) {
       // 左键
       case 0:
@@ -55,7 +55,7 @@ export class PolygonCommonHandler extends CanvasCommonHandler {
   };
 
   protected drawAnimateFrame = (currentPoint: Point) => {
-    const lineAlgorithm = this.getAlgorithm() as LineAlgorithm;
+    const lineAlgorithm = this.getAlgorithm() as PolygonAlgorithm;
     if (lineAlgorithm.working) {
       lineAlgorithm.addPoint(currentPoint);
       this.drawOneFrame();

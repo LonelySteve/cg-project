@@ -4,7 +4,7 @@ import ImageDataEx from "../../models/ImageDataEx";
 import Point from "../../models/Point";
 import Picker from "../Picker";
 
-export type OperateType = "polygon" | "image" | "fill";
+export type OperateType = "polygon" | "image" | "fill" | "rectangle";
 
 /**
  * Canvas 公用处理器基类
@@ -265,7 +265,7 @@ export default abstract class CanvasCommonHandler {
   private pickerMouseUpHandler = (ev: MouseEvent) => {
     // 如果当前 picker 显示中，则不让其他事件处理程序被调用
     if (this.picker.isShow) ev.stopImmediatePropagation();
-    
+
     switch (ev.button) {
       // 左键
       case 0:
