@@ -37,15 +37,12 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
     this.draw();
   }
 
-  mouseDownHandler: React.MouseEventHandler<HTMLCanvasElement> = event => {
+  protected mouseDownHandler = (event: MouseEvent) => {
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
     // 当前算法还没确定提交
     if (algorithm.working) {
       const imageRect = algorithm.getImageRect();
-      const current = new Point(
-        event.nativeEvent.offsetX,
-        event.nativeEvent.offsetY
-      );
+      const current = new Point(event.offsetX, event.offsetY);
       // 获取拖拽点的位置
       this.dragPosition = getPointPosition(
         current,
@@ -58,23 +55,20 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
     }
   };
 
-  mouseLeaveHandler: React.MouseEventHandler<HTMLCanvasElement> = event => {
+  protected mouseLeaveHandler = (event: MouseEvent) => {
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
     algorithm.applyImageRect();
     this.dragPosition = this.dragPoint = undefined;
   };
 
-  mouseUpHandler: React.MouseEventHandler<HTMLCanvasElement> = event => {
+  protected mouseUpHandler = (event: MouseEvent) => {
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
     algorithm.applyImageRect();
     this.dragPosition = this.dragPoint = undefined;
   };
 
-  mouseMoveHandler: React.MouseEventHandler<HTMLCanvasElement> = event => {
-    const current = new Point(
-      event.nativeEvent.offsetX,
-      event.nativeEvent.offsetY
-    );
+  protected mouseMoveHandler = (event: MouseEvent) => {
+    const current = new Point(event.offsetX, event.offsetY);
 
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
     let imageRect: Rect;

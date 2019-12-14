@@ -46,7 +46,6 @@ export type CanvasControllerProps = {
   borderColor?: Color | null;
   fillColor?: Color | null;
   roundMode?: RoundModeType | null;
-  pickerColorType?: ColorType | null;
   // 各种回调函数，负责将 UI 动作传递给上层处理，由上层重传状态量刷新 UI
   onOperateChanged?: (value: OperateType) => void;
   onAlgorithmTypeChanged?: (value: AlgorithmType) => void;
@@ -54,7 +53,6 @@ export type CanvasControllerProps = {
   onBorderColorChanged?: (value: Color) => void; // 一旦触发更新，肯定会传一个确定的 Color 值，而不是 null
   onFillColorChanged?: (value: Color) => void; // 同上
   onRoundMode?: (value: RoundModeType) => void; // 同上
-  onPickerColorType?: (value: ColorType | null | undefined) => void; // 这个比较特别，用户可以取消选中某种颜色类型的 Picker 状态，因此可能得到 null 值
 };
 
 export const CanvasController: React.FC<CanvasControllerProps> = props => {
@@ -194,7 +192,7 @@ export const CanvasController: React.FC<CanvasControllerProps> = props => {
       </FormControl>
     );
 
-  props.pickerColorType !== null &&
+  (props.borderColor || props.fillColor) &&
     algorithmArgsComponents.push(
       <ColorToggleButtonGroup
         picker={props.canvasCommonHandler.picker}

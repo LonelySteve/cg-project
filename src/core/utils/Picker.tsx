@@ -38,17 +38,16 @@ export default class Picker {
   /**
    * 指示当前是否启用取点/色器
    */
-  public isEnable: boolean = false;
-  /**
-   * 当前鼠标在 canvas 中的相对位置
-   */
-  public currentMouseRelativePosition?: Point;
-  /**
-   * 当前取色类别
-   */
-  public colorType?: ColorType;
-
+  public isShow: boolean = false;
   protected canvasCommonHandler: CanvasCommonHandler;
+  /**
+   * 当前选取点，实际渲染将使用该字段的值
+   */
+  private _pickPoint?: Point;
+  /**
+   * 被同意的选取点，仅用于对外输出
+   */
+  private _acceptedPickPoint?: Point;
 
   constructor(canvasCommonHandler: CanvasCommonHandler) {
     this.canvasCommonHandler = canvasCommonHandler;
@@ -57,14 +56,14 @@ export default class Picker {
   /**
    * 获取放大区域的左上角坐标
    */
-  public get zoomAreaPosition(): Point {
+  public get zoomAreaPosition(): Point | undefined {
     return this.getViewPosition(this.zoomWidth, this.zoomHeight);
   }
 
   /**
    * 获取放大视图的左上角坐标
    */
-  public get zoomViewPosition(): Point {
+  public get zoomViewPosition(): Point | undefined {
     // 要避免渲染的视图超过 canvas 区域，否则用户无法看到完整的放大视图
     return this.getViewPosition(this.zoomViewWidth, this.zoomViewHeight);
   }
@@ -72,16 +71,45 @@ export default class Picker {
   /**
    * 获取当前选取点（在 canvas 中实际坐标）
    */
-  public get pickPoint(): Point {
-    if (this.currentMouseRelativePosition === undefined) {
-      throw new Error("Picker 当前没有选取到任何点哦~");
-    }
-    return this.currentMouseRelativePosition;
+  public get pickPoint(): Point | undefined {
+    return this._pickPoint;
   }
+  /**
+   * 设置当前选取点（在 canvas 中实际坐标）
+   *
+   * 注意：该操作会尝试重绘动画帧
+   */
+  public set pickPoint(v: Point | undefined) {
+    this._pickPoint = v;
+    // 约束使选取点不超过 canvas 边界
+    this._pickPoint = this.getViewPosition(1, 1);
+    this.drawAnimateFrame();
+  }
+  /**
+   * 获取受同意的点
+   */
+  public get acceptPickPoint() {
+    return this._acceptedPickPoint;
+  }
+  /**
+   * 获取受同意的点的颜色
+   */
+  public get acceptPickPointColor(): Color | undefined {
+    if (this._acceptedPickPoint === undefined) return undefined;
+
+    return this.canvasCommonHandler.imageDataEx.getPixelColor(
+      this._acceptedPickPoint
+    );
+  }
+
   /**
    * 获取当前选取点（在放大视图中的映射到 canvas 的坐标）
    */
-  public get pickPointInZoomView(): Point {
+  public get pickPointInZoomView(): Point | undefined {
+    if (this.pickPoint === undefined) return undefined;
+    if (this.zoomAreaPosition === undefined) return undefined;
+    if (this.zoomViewPosition === undefined) return undefined;
+
     const offset = Point.sub(
       this.pickPoint,
       this.zoomAreaPosition.toSize()
@@ -91,95 +119,56 @@ export default class Picker {
   }
 
   /** 获取当前选取点的颜色 */
-  public get pickPointColor(): Color {
+  public get pickPointColor(): Color | undefined {
+    if (this.pickPoint === undefined) return undefined;
+
     return this.canvasCommonHandler.imageDataEx.getPixelColor(this.pickPoint);
   }
 
   /**
-   * 启用取点/色器
+   * 将指定的点设置为当前选中同意点，如果不指定，将使用当前渲染用选中点作为当前选中同意点
    */
-  public enable() {
-    if (this.isEnable) {
-      return;
-    }
-    // 尝试添加监听器
-    try {
-      // 禁用平滑效果
-      this.canvasCommonHandler.ctx.imageSmoothingEnabled = false;
-      const canvas = this.canvasCommonHandler.getCanvasHTMLElement();
+  public accept(point?: Point) {
+    this._acceptedPickPoint = point || this.pickPoint;
+  }
 
-      canvas.addEventListener("mousemove", this.handleMouseMove);
-      canvas.addEventListener("mouseup", this.handleMouseUp);
+  /**
+   * 显示取点/色器
+   */
+  public show() {
+    if (this.isShow) return;
 
-      this.isEnable = true;
-    } catch (error) {
-      console.error("启用 Picker 失败，原因：" + error);
-    }
+    // 禁用平滑效果
+    this.canvasCommonHandler.ctx.imageSmoothingEnabled = false;
+    this.isShow = true;
+
+    this.drawAnimateFrame();
+
     return this;
   }
   /**
-   * 禁用取点/色器
+   * 隐藏取点/色器
    */
-  public disable() {
-    if (!this.isEnable) {
-      return;
-    }
-    // 尝试移除监听器
-    try {
-      const canvas = this.canvasCommonHandler.getCanvasHTMLElement();
-      canvas.removeEventListener("mousemove", this.handleMouseMove);
-      canvas.removeEventListener("mouseup", this.handleMouseUp);
-      // 应用缓存，把残留的 Picker 影像刷掉
-      this.canvasCommonHandler.applyImageData();
-      this.isEnable = false;
-    } catch (error) {
-      console.error("禁用 Picker 失败，原因：" + error);
-    }
+  public hide() {
+    if (!this.isShow) return;
+
+    // 应用缓存，把残留的 Picker 影像刷掉
+    this.canvasCommonHandler.applyImageData();
+    this.isShow = false;
+
     return this;
   }
+
   /**
    * 切换当前取色/点器的启用状态
    */
   public toggle() {
-    this.isEnable ? this.disable() : this.enable();
+    this.isShow ? this.hide() : this.show();
   }
 
-  public handleMouseMove = (event: MouseEvent) => {
-    // 设置当前鼠标指针的相对于 canvas 的位置
-    this.currentMouseRelativePosition = new Point(event.offsetX, event.offsetY);
-    // 应用一次图像缓存，这可能会导致未完成的工作（动画帧）被冲掉，因此在使用 Picker 时，内部算法应处于未工作的状态
+  protected getViewPosition(width: number, height: number): Point | undefined {
+    if (this.pickPoint === undefined) return undefined;
 
-    this.drawAnimateFrame();
-    event.stopPropagation();
-  };
-
-  public handleMouseUp = (event: MouseEvent) => {
-    this.currentMouseRelativePosition = new Point(event.offsetX, event.offsetY);
-    if (event.button === 0) {
-      // 当 picker 当前工作并选取到一个像素时发生
-
-      const pickEvent = new CustomEvent<{
-        pickPoint: Point;
-        pickColor: Color;
-        pickColorType: ColorType | undefined;
-      }>("onPick");
-
-      pickEvent.initCustomEvent("onPick", true, true, {
-        pickPoint: this.pickPoint,
-        pickColor: this.pickPointColor,
-        pickColorType: this.colorType
-      });
-
-      this.canvasCommonHandler.getCanvasHTMLElement().dispatchEvent(pickEvent); // 派发事件
-    }
-    this.disable();
-    event.stopPropagation();
-  };
-
-  protected getViewPosition(width: number, height: number): Point {
-    if (this.currentMouseRelativePosition === undefined) {
-      throw new Error("这很奇怪，为啥 Picker 获取当前鼠标位置是空的呢？");
-    }
     const [minX, minY, maxX, maxY] = [
       0,
       0,
@@ -188,8 +177,8 @@ export default class Picker {
     ];
     // 计算实际点
     const rp = new Point(
-      this.currentMouseRelativePosition.X - width / 2,
-      this.currentMouseRelativePosition.Y - height / 2
+      this.pickPoint.X - width / 2,
+      this.pickPoint.Y - height / 2
     );
     // 对实际点处理，使其必然落入有效区间内
     return rp
@@ -198,6 +187,10 @@ export default class Picker {
   }
 
   private drawExtraInfo() {
+    if (this.zoomViewPosition === undefined) return;
+    if (this.pickPointColor === undefined) return;
+    if (this.pickPoint === undefined) return;
+
     const ctx = this.canvasCommonHandler.ctx;
     ctx.save();
 
@@ -241,6 +234,8 @@ export default class Picker {
     ctx.restore();
   }
   private drawGridLine(color?: Color) {
+    if (this.zoomViewPosition === undefined) return;
+
     color = color || new Color(33, 33, 33, 50);
 
     const ctx = this.canvasCommonHandler.ctx;
@@ -269,6 +264,9 @@ export default class Picker {
     ctx.restore();
   }
   private drawPickPoint() {
+    if (this.pickPointColor === undefined) return;
+    if (this.pickPointInZoomView === undefined) return;
+
     const ctx = this.canvasCommonHandler.ctx;
     ctx.save();
     ctx.strokeStyle = this.pickPointColor.reverse.cssStyle;
@@ -282,6 +280,9 @@ export default class Picker {
     ctx.restore();
   }
   private drawBorder() {
+    if (this.zoomViewPosition === undefined) return;
+    if (this.pickPointColor === undefined) return;
+
     const ctx = this.canvasCommonHandler.ctx;
     // 简单画个反色的边框就行
     ctx.save();
@@ -296,16 +297,13 @@ export default class Picker {
     ctx.restore();
   }
 
-  private static warned = false;
-
   private drawAnimateFrame() {
-    if (this.canvasCommonHandler.getAlgorithm().working && !Picker.warned) {
-      console.warn("内部算法正在工作，使用 Picker 会影响动画帧等显示！");
-      Picker.warned = true; // 只警告一遍
-    }
+    if (!this.isShow) return;
+    if (this.zoomAreaPosition === undefined) return;
+    if (this.zoomViewPosition === undefined) return;
 
-    this.canvasCommonHandler.applyImageData();
-
+    this.canvasCommonHandler.applyImageData(); // 刷掉动画帧残留
+    // 获取已提交缓存的指定放大区域的放大视图的图像数据
     const zoomViewImageData = this.canvasCommonHandler.imageDataEx.getZoomImageData(
       {
         origin: this.zoomAreaPosition,
@@ -313,16 +311,16 @@ export default class Picker {
       },
       this.zoomLevel
     );
-
-    this.canvasCommonHandler.ctx.putImageData(
+    // 绘制放大区域主体
+    this.canvasCommonHandler.applyImageData(
       zoomViewImageData,
       this.zoomViewPosition.X,
       this.zoomViewPosition.Y
     );
-
-    this.drawBorder();
-    this.drawGridLine();
-    this.drawPickPoint();
-    this.drawExtraInfo();
+    // 绘制亿点细节
+    this.drawBorder(); // 绘制边框
+    this.drawGridLine(); // 绘制网格线
+    this.drawPickPoint(); // 绘制选取点
+    this.drawExtraInfo(); // 绘制额外信息
   }
 }

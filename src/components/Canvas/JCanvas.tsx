@@ -16,7 +16,6 @@ import ImageCommonHandler from "../../core/utils/commonHandler/ImageCommonHandle
 import { PolygonCommonHandler } from "../../core/utils/commonHandler/PolygonCommonHandler";
 import { CanvasArea, CanvasSize } from "./CanvasArea";
 import { CanvasController } from "./CanvasController";
-import { ColorType } from "./ColorToggleButtonGroup";
 
 const useStyles = makeStyles(theme => ({
   canvasController: {
@@ -106,9 +105,8 @@ const getCommonHandlerInstance = (
   canvasCommonHandler.imageData = oldCommonHandlerInstance.imageData;
 
   // 对旧的处理器的资源进行管理
-
-  // 关闭旧处理器的 Picker
-  oldCommonHandlerInstance.picker.disable();
+  canvasCommonHandler.resume();
+  oldCommonHandlerInstance.suspend();
 
   return canvasCommonHandler;
 };
@@ -171,10 +169,6 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
     (algorithm as any).fillColor || null
   );
 
-  const [pickerColorType, setPickerColorType] = useState<
-    ColorType | undefined | null
-  >();
-
   const [roundMode, setRoundMode] = useState<RoundModeType | undefined | null>(
     (algorithm as DDA).roundNumberModeType
   );
@@ -203,13 +197,11 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
         setBorderColor(a.borderColor);
         setFillColor(a.fillColor);
         setRoundMode(null);
-        setPickerColorType(undefined);
         break;
       case "_InternalImage":
         setBorderColor(null);
         setFillColor(null);
         setRoundMode(null);
-        setPickerColorType(null);
         break;
       default:
         break;
@@ -227,7 +219,6 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
           borderColor={borderColor}
           fillColor={fillColor}
           roundMode={roundMode}
-          pickerColorType={pickerColorType}
           onOperateChanged={value => {
             const newCommonHandler = getCommonHandlerInstance(
               value,
@@ -257,15 +248,6 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
             (algorithm as any).roundNumberModeType = value;
             setRoundMode(value);
           }}
-          onPickerColorType={value => {
-            commonHandler.picker.colorType = pickerColorType || undefined;
-            if (value) {
-              commonHandler.picker.enable();
-            } else {
-              commonHandler.picker.disable();
-            }
-            setPickerColorType(value);
-          }}
         />
       </Grid>
 
@@ -274,7 +256,9 @@ export const JCanvas: React.FC<JCanvasProps> = props => {
           <CanvasArea
             ref={canvasRef}
             {...(props as CanvasSize)}
-            commonHandler={commonHandler}
+            onLoad={() => {
+              commonHandler.load();
+            }}
           />
         </Paper>
       </Grid>

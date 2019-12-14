@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import Color from "../../core/models/Color";
-import CanvasCommonHandler from "../../core/utils/commonHandler/CanvasCommonHandler";
 
 export type CanvasSize = {
   width?: number;
@@ -9,7 +8,7 @@ export type CanvasSize = {
 
 export type CanvasAreaProps = {
   defaultBgColor?: Color;
-  commonHandler?: CanvasCommonHandler;
+  onLoad?: () => void;
 } & CanvasSize;
 
 const handleContextMenu: React.MouseEventHandler<HTMLCanvasElement> = e => {
@@ -18,9 +17,6 @@ const handleContextMenu: React.MouseEventHandler<HTMLCanvasElement> = e => {
 
 export const CanvasArea = React.forwardRef<HTMLCanvasElement, CanvasAreaProps>(
   (props, ref) => {
-    if (props.commonHandler === undefined) {
-      return <canvas ref={ref} width={props.width} height={props.height} />;
-    }
     // 在组件挂载完成之后调用
     useEffect(() => {
       if (ref !== null) {
@@ -36,22 +32,15 @@ export const CanvasArea = React.forwardRef<HTMLCanvasElement, CanvasAreaProps>(
           }
         }
       }
-    // eslint-disable-next-line
+      props.onLoad && props.onLoad();
+      // eslint-disable-next-line
     }, []);
     return (
       <canvas
         ref={ref}
         width={props.width}
         height={props.height}
-        onMouseDown={props.commonHandler.mouseDownHandler}
         onContextMenu={handleContextMenu}
-        onMouseEnter={props.commonHandler.mouseEnterHandler}
-        onMouseLeave={props.commonHandler.mouseLeaveHandler}
-        onMouseMove={props.commonHandler.mouseMoveHandler}
-        onMouseOut={props.commonHandler.mouseOutHandler}
-        onMouseOver={props.commonHandler.mouseOverHandler}
-        onMouseUp={props.commonHandler.mouseUpHandler}
-        onClick={props.commonHandler.clickHandler}
       />
     );
   }
