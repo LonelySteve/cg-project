@@ -12,6 +12,8 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
   protected dragPosition?: Position;
   protected dragPoint?: Point;
 
+  protected dragImagePoint?: Point;
+
   public imageBitmap?: ImageBitmap;
 
   public loadImage(imageBitmap: ImageBitmap) {
@@ -39,37 +41,43 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
 
   protected mouseDownHandler = (event: MouseEvent) => {
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
-    // 当前算法还没确定提交
-    if (algorithm.working) {
-      const imageRect = algorithm.getImageRect();
-      const current = new Point(event.offsetX, event.offsetY);
-      // 获取拖拽点的位置
-      this.dragPosition = getPointPosition(
-        current,
-        imageRect,
-        this.pickTolerance
-      );
-      if (this.dragPosition !== undefined) {
-        this.dragPoint = current;
-      }
+    // 当前算法已经确定提交则不处理
+    if (!algorithm.working) return;
+
+    const imageRect = algorithm.getImageRect();
+    const current = new Point(event.offsetX, event.offsetY);
+    // 获取拖拽点的位置
+    this.dragPosition = getPointPosition(
+      current,
+      imageRect,
+      this.pickTolerance
+    );
+    // 如果当前拖拽位置处于边
+    if (this.dragPosition !== undefined) {
+      this.dragPoint = current;
+      return;
+    }
+    // 如果当前点处于图像矩形区域内
+    if (current.inRect(imageRect)) {
+      this.dragImagePoint = current;
+      return;
     }
   };
 
   protected mouseLeaveHandler = (event: MouseEvent) => {
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
     algorithm.applyImageRect();
-    this.dragPosition = this.dragPoint = undefined;
+    this.dragPosition = this.dragPoint = this.dragImagePoint = undefined;
   };
 
   protected mouseUpHandler = (event: MouseEvent) => {
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
     algorithm.applyImageRect();
-    this.dragPosition = this.dragPoint = undefined;
+    this.dragPosition = this.dragPoint = this.dragImagePoint = undefined;
   };
 
   protected mouseMoveHandler = (event: MouseEvent) => {
     const current = new Point(event.offsetX, event.offsetY);
-
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
     let imageRect: Rect;
     try {
@@ -77,99 +85,10 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
     } catch (error) {
       return; // 当前 canvas 引用还未注入
     }
-    const currentPointPosition = getPointPosition(
-      current,
-      imageRect,
-      this.pickTolerance
-    );
-    const canvasHtmlElement = this.getCanvasHTMLElement();
-
-    // 添加 cursor
-    if (this.dragPosition === undefined) {
-      switch (currentPointPosition) {
-        case Position.up:
-        case Position.down:
-          canvasHtmlElement.style.cursor = "ns-resize";
-          break;
-        case Position.left:
-        case Position.right:
-          canvasHtmlElement.style.cursor = "ew-resize";
-          break;
-        case Position.leftUp:
-        case Position.rightDown:
-          canvasHtmlElement.style.cursor = "nwse-resize";
-          break;
-        case Position.rightUp:
-        case Position.leftDown:
-          canvasHtmlElement.style.cursor = "nesw-resize";
-          break;
-        default:
-          canvasHtmlElement.style.cursor = "default";
-          break;
-      }
-    }
-
-    if (!algorithm.working) {
-      canvasHtmlElement.style.cursor = "default";
-    }
-
-    if (this.dragPosition !== undefined && this.dragPoint !== undefined) {
-      const offsetX: number = this.dragPoint.X - current.X;
-      const offsetY: number = this.dragPoint.Y - current.Y;
-      // 标准化 imageRect，以暂时消除 BUG，如果要做翻转，这里不能这样写
-      standardization(imageRect);
-      switch (this.dragPosition) {
-        case Position.right:
-          algorithm.setImageRect({
-            origin: imageRect.origin,
-            size: imageRect.size.copy().addSize(-offsetX, 0)
-          });
-          break;
-        case Position.down:
-          algorithm.setImageRect({
-            origin: imageRect.origin,
-            size: imageRect.size.copy().addSize(0, -offsetY)
-          });
-          break;
-        case Position.up:
-          algorithm.setImageRect({
-            origin: imageRect.origin.copy().addSize(0, -offsetY),
-            size: imageRect.size.copy().addSize(0, offsetY)
-          });
-          break;
-        case Position.left:
-          algorithm.setImageRect({
-            origin: imageRect.origin.copy().addSize(-offsetX, 0),
-            size: imageRect.size.copy().addSize(offsetX, 0)
-          });
-          break;
-        case Position.rightDown:
-          algorithm.setImageRect({
-            origin: imageRect.origin,
-            size: imageRect.size.copy().addSize(-offsetX, -offsetY)
-          });
-          break;
-        case Position.leftDown:
-          algorithm.setImageRect({
-            origin: imageRect.origin.copy().addSize(-offsetX, 0),
-            size: imageRect.size.copy().addSize(offsetX, -offsetY)
-          });
-          break;
-        case Position.rightUp:
-          algorithm.setImageRect({
-            origin: imageRect.origin.copy().addSize(0, -offsetY),
-            size: imageRect.size.copy().addSize(-offsetX, offsetY)
-          });
-          break;
-        case Position.leftUp:
-          algorithm.setImageRect({
-            origin: imageRect.origin.copy().addSize(-offsetX, -offsetY),
-            size: imageRect.size.copy().addSize(offsetX, offsetY)
-          });
-          break;
-      }
-      this.drawAnimateFrame();
-    }
+    const canvasHtmlElememt = this.getCanvasHTMLElement();
+    this.handleImageTransform(algorithm, canvasHtmlElememt, imageRect, current);
+    this.handleImageMove(algorithm, canvasHtmlElememt, imageRect, current);
+    this.drawAnimateFrame();
   };
 
   protected drawAnimateFrame() {
@@ -178,6 +97,133 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
       this.applyImageData(); // 清除上一帧残留
       const newImageData = this.getNewImageData();
       this.applyImageData(imageAlgorithm.drawStretchedBorder(newImageData));
+    }
+  }
+
+  private handleImageMove(
+    algorithm: ImageAlgorithm,
+    canvasHtmlElement: HTMLCanvasElement,
+    imageRect: Rect,
+    current: Point
+  ) {
+    // 添加 cursor
+    if (current.inRect(imageRect) && this.dragPoint === undefined) {
+      canvasHtmlElement.style.cursor = "grab";
+    }
+
+    if (this.dragImagePoint === undefined) return;
+
+    // 添加 cursor
+    canvasHtmlElement.style.cursor = "grabbing";
+
+    const offsetX: number = this.dragImagePoint.X - current.X;
+    const offsetY: number = this.dragImagePoint.Y - current.Y;
+
+    algorithm.setImageRect({
+      origin: imageRect.origin.copy().addSize(-offsetX, -offsetY),
+      size: imageRect.size
+    });
+
+    this.drawAnimateFrame();
+  }
+  private handleImageTransform(
+    algorithm: ImageAlgorithm,
+    canvasHtmlElement: HTMLCanvasElement,
+    imageRect: Rect,
+    current: Point
+  ) {
+    const currentPointPosition = getPointPosition(
+      current,
+      imageRect,
+      this.pickTolerance
+    );
+
+    // 添加 cursor
+
+    switch (currentPointPosition) {
+      case Position.up:
+      case Position.down:
+        canvasHtmlElement.style.cursor = "ns-resize";
+        break;
+      case Position.left:
+      case Position.right:
+        canvasHtmlElement.style.cursor = "ew-resize";
+        break;
+      case Position.leftUp:
+      case Position.rightDown:
+        canvasHtmlElement.style.cursor = "nwse-resize";
+        break;
+      case Position.rightUp:
+      case Position.leftDown:
+        canvasHtmlElement.style.cursor = "nesw-resize";
+        break;
+      default:
+        if (this.dragPoint === undefined) {
+          canvasHtmlElement.style.cursor = "default";
+        }
+        break;
+    }
+
+    if (!algorithm.working) {
+      canvasHtmlElement.style.cursor = "default";
+    }
+
+    // 非拖拽模式直接返回
+    if (this.dragPoint === undefined || this.dragPosition === undefined) return;
+
+    const offsetX: number = this.dragPoint.X - current.X;
+    const offsetY: number = this.dragPoint.Y - current.Y;
+    // 标准化 imageRect，以暂时消除 BUG，如果要做翻转，这里不能这样写
+    standardization(imageRect);
+    switch (this.dragPosition) {
+      case Position.right:
+        algorithm.setImageRect({
+          origin: imageRect.origin,
+          size: imageRect.size.copy().addSize(-offsetX, 0)
+        });
+        break;
+      case Position.down:
+        algorithm.setImageRect({
+          origin: imageRect.origin,
+          size: imageRect.size.copy().addSize(0, -offsetY)
+        });
+        break;
+      case Position.up:
+        algorithm.setImageRect({
+          origin: imageRect.origin.copy().addSize(0, -offsetY),
+          size: imageRect.size.copy().addSize(0, offsetY)
+        });
+        break;
+      case Position.left:
+        algorithm.setImageRect({
+          origin: imageRect.origin.copy().addSize(-offsetX, 0),
+          size: imageRect.size.copy().addSize(offsetX, 0)
+        });
+        break;
+      case Position.rightDown:
+        algorithm.setImageRect({
+          origin: imageRect.origin,
+          size: imageRect.size.copy().addSize(-offsetX, -offsetY)
+        });
+        break;
+      case Position.leftDown:
+        algorithm.setImageRect({
+          origin: imageRect.origin.copy().addSize(-offsetX, 0),
+          size: imageRect.size.copy().addSize(offsetX, -offsetY)
+        });
+        break;
+      case Position.rightUp:
+        algorithm.setImageRect({
+          origin: imageRect.origin.copy().addSize(0, -offsetY),
+          size: imageRect.size.copy().addSize(-offsetX, offsetY)
+        });
+        break;
+      case Position.leftUp:
+        algorithm.setImageRect({
+          origin: imageRect.origin.copy().addSize(-offsetX, -offsetY),
+          size: imageRect.size.copy().addSize(offsetX, offsetY)
+        });
+        break;
     }
   }
 }
