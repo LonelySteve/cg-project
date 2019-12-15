@@ -21,11 +21,23 @@ export const NavBar: React.FC = () => {
         <Typography variant="h6" className={classes.title}>
           CG-Project
         </Typography>
-        <Button color="inherit" variant="text">
+        <Button
+          color="inherit"
+          variant="text"
+          onClick={() =>
+            window.open("https://github.com/LonelySteve/cg-project/wiki")
+          }
+        >
           使用说明
         </Button>
-        <Button color="inherit" variant="text">
-          关于
+        <Button
+          color="inherit"
+          variant="text"
+          onClick={() =>
+            window.open("https://github.com/LonelySteve/cg-project")
+          }
+        >
+          GitHub
         </Button>
       </Toolbar>
     </AppBar>

@@ -208,10 +208,6 @@ export default abstract class CanvasCommonHandler {
     const canvas = this.getCanvasHTMLElement();
     // 移除事件监听
 
-    // Picker
-    canvas.removeEventListener("mousemove", this.pickerMouseMoveHandler);
-    canvas.removeEventListener("mouseup", this.pickerMouseUpHandler);
-    document.removeEventListener("keyup", this.pickerKeyUpHandler);
     // 子类
     canvas.removeEventListener("mouseup", this.mouseUpHandler);
     canvas.removeEventListener("mousedown", this.mouseDownHandler);
@@ -222,6 +218,10 @@ export default abstract class CanvasCommonHandler {
     canvas.removeEventListener("mouseout", this.mouseOutHandler);
     document.removeEventListener("keydown", this.keyDownHandler);
     document.removeEventListener("keyup", this.KeyUpHandler);
+    // Picker
+    canvas.removeEventListener("mousemove", this.pickerMouseMoveHandler);
+    canvas.removeEventListener("mouseup", this.pickerMouseUpHandler);
+    document.removeEventListener("keyup", this.pickerKeyUpHandler);
 
     this.picker.hide();
   }
@@ -232,10 +232,6 @@ export default abstract class CanvasCommonHandler {
     this.suspend();
     // 开始添加事件监听
 
-    // Picker
-    canvas.addEventListener("mousemove", this.pickerMouseMoveHandler);
-    canvas.addEventListener("mouseup", this.pickerMouseUpHandler);
-    document.addEventListener("keyup", this.pickerKeyUpHandler);
     // 子类
     canvas.addEventListener("mouseup", this.mouseUpHandler);
     canvas.addEventListener("mousedown", this.mouseDownHandler);
@@ -246,6 +242,10 @@ export default abstract class CanvasCommonHandler {
     canvas.addEventListener("mouseout", this.mouseOutHandler);
     document.addEventListener("keydown", this.keyDownHandler);
     document.addEventListener("keyup", this.KeyUpHandler);
+    // Picker
+    canvas.addEventListener("mousemove", this.pickerMouseMoveHandler);
+    canvas.addEventListener("mouseup", this.pickerMouseUpHandler);
+    document.addEventListener("keyup", this.pickerKeyUpHandler);
   }
 
   // 供子类实现的事件处理器
