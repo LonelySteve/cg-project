@@ -1,6 +1,6 @@
 import Color from "./Color";
 import Point from "./Point";
-import Rect from "./Rect";
+import Rect, { copyRect, standardization } from "./Rect";
 import Size from "./Size";
 
 export default class ImageDataEx extends ImageData {
@@ -153,14 +153,21 @@ export default class ImageDataEx extends ImageData {
    * @param rect 指定想反转边缘颜色的矩形区域
    */
   public reverseRectBorderColor(rect: Rect) {
-    // 取整处理
-    rect.origin.round();
-    rect.size.round();
+    // 标准化处理
+    const standardRect = standardization(copyRect(rect));
+
     const drawingPoints: Point[] = new Array<Point>();
     const drawingColors: Color[] = new Array<Color>();
 
-    for (const y of [rect.origin.Y, rect.origin.Y + rect.size.height - 1]) {
-      for (let x = rect.origin.X; x < rect.origin.X + rect.size.width; x++) {
+    for (const y of [
+      standardRect.origin.Y,
+      standardRect.origin.Y + standardRect.size.height - 1
+    ]) {
+      for (
+        let x = standardRect.origin.X;
+        x < standardRect.origin.X + standardRect.size.width;
+        x++
+      ) {
         const currentPoint = new Point(x, y);
         if (this.existPixel(currentPoint)) {
           drawingPoints.push(currentPoint);
@@ -170,10 +177,13 @@ export default class ImageDataEx extends ImageData {
         }
       }
     }
-    for (const x of [rect.origin.X, rect.origin.X + rect.size.width - 1]) {
+    for (const x of [
+      standardRect.origin.X,
+      standardRect.origin.X + standardRect.size.width - 1
+    ]) {
       for (
-        let y = rect.origin.Y + 1;
-        y < rect.origin.Y + rect.size.height - 1;
+        let y = standardRect.origin.Y + 1;
+        y < standardRect.origin.Y + standardRect.size.height - 1;
         y++
       ) {
         const currentPoint = new Point(x, y);

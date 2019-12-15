@@ -1,7 +1,7 @@
 import { AlgorithmType } from "../../algorithms/Algorithm";
 import ImageAlgorithm from "../../algorithms/image/ImageAlgorithm";
 import Point from "../../models/Point";
-import Rect, { getPointPosition, Position, standardization } from "../../models/Rect";
+import Rect, { copyRect, getPointPosition, Position, standardization } from "../../models/Rect";
 import CanvasCommonHandler from "./CanvasCommonHandler";
 
 export default class ImageCommonHandler extends CanvasCommonHandler {
@@ -25,6 +25,7 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
 
   public acceptImageRect() {
     const algorithm = this.getAlgorithm() as ImageAlgorithm;
+    algorithm.applyImageRect();
     algorithm.stopWork();
     this.applyImageData(); // 清除动画帧残留
     this.draw();
@@ -47,10 +48,14 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
 
     const imageRect = algorithm.getImageRect();
     const current = new Point(event.offsetX, event.offsetY);
+
+    // 标准化 imageRect，以暂时消除 BUG，如果要做翻转，这里不能这样写
+    const standardRect = standardization(copyRect(imageRect));
+
     // 获取拖拽点的位置
     this.dragPosition = getPointPosition(
       current,
-      imageRect,
+      standardRect,
       this.pickTolerance
     );
     // 如果当前拖拽位置处于边
@@ -59,7 +64,7 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
       return;
     }
     // 如果当前点处于图像矩形区域内
-    if (current.inRect(imageRect)) {
+    if (current.inRect(standardRect)) {
       this.dragImagePoint = current;
       return;
     }
@@ -102,8 +107,17 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
       return; // 当前 canvas 引用还未注入
     }
     const canvasHtmlElememt = this.getCanvasHTMLElement();
-    this.handleImageTransform(algorithm, canvasHtmlElememt, imageRect, current);
-    this.handleImageMove(algorithm, canvasHtmlElememt, imageRect, current);
+
+    // 标准化 imageRect，以暂时消除 BUG，如果要做翻转，这里不能这样写
+    const standardRect = standardization(copyRect(imageRect));
+
+    this.handleImageTransform(
+      algorithm,
+      canvasHtmlElememt,
+      standardRect,
+      current
+    );
+    this.handleImageMove(algorithm, canvasHtmlElememt, standardRect, current);
     this.drawAnimateFrame();
   };
 
@@ -123,7 +137,9 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
     current: Point
   ) {
     // 添加 cursor
-    if (current.inRect(imageRect) && this.dragPoint === undefined) {
+    const grabArea = copyRect(imageRect);
+
+    if (current.inRect(grabArea) && this.dragPoint === undefined) {
       canvasHtmlElement.style.cursor = "grab";
     }
 
@@ -189,8 +205,7 @@ export default class ImageCommonHandler extends CanvasCommonHandler {
 
     const offsetX: number = this.dragPoint.X - current.X;
     const offsetY: number = this.dragPoint.Y - current.Y;
-    // 标准化 imageRect，以暂时消除 BUG，如果要做翻转，这里不能这样写
-    standardization(imageRect);
+
     switch (this.dragPosition) {
       case Position.right:
         algorithm.setImageRect({
